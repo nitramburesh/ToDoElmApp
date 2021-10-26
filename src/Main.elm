@@ -3,20 +3,12 @@ module Main exposing (..)
 import Browser
 import Html exposing (Html, text, div, h1, img)
 import Html.Attributes exposing (src)
-import RemoteData exposing (RemoteData(..))
 import Http
-import Json.Decode exposing (Decoder, int, string, bool)
+import Json.Decode exposing (Decoder, string, int, bool)
 import Json.Decode.Pipeline exposing (required)
-
-
+import RemoteData
 ---- MODEL ----
 
-
-type Model 
-    = NotAsked
-    | Loading
-    | Failure
-    | Success String
 
 type alias ToDoItem =
     {
@@ -38,13 +30,19 @@ getToDoItems : Cmd Msg
 getToDoItems = 
     Http.get 
         { url = "https://jsonplaceholder.typicode.com/todos"
-        , expect = Http.expectJson GotItems itemDecoder
+        , expect = Http.expectJson (RemoteData.fromResult >> GotItems) itemDecoder
         }
-log = Debug.log getToDoItems
+
+type alias Model =
+    {
+        toDoItem : RemoteData.WebData ToDoItem
+    }
+        
+
 
 init : ( Model, Cmd Msg )
 init =
-    (Model, Cmd.none)
+    ({toDoItem = RemoteData.Loading},getToDoItems)
 
 
 
@@ -52,15 +50,16 @@ init =
 
 
 type Msg
-    = GotItems (Result Http.Error String)
+    = GotItems (RemoteData.WebData ToDoItem)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
-
-
-
+   case msg of
+      GotItems response ->
+        ( {model | toDoItem = response}
+        , Cmd.none
+        )
 ---- VIEW ----
 
 
@@ -71,8 +70,15 @@ view model =
         , h1 [] [ text "Welcome to my TODO app" ]
         ]
 
+viewItems : Model -> ToDoItem -> Html msg 
+viewItems model = 
+    case model.toDoItem of
+            RemoteData.NotAsked -> div [][ text "initializing"]
+            RemoteData.Loading -> div [][ text "loading"]
+            RemoteData.Failure toDoItem -> div [][ text "failed to load"]
+            RemoteData.Success toDoItem -> div [][text model.toDoItem]
 
-
+    
 ---- PROGRAM ----
 
 
