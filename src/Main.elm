@@ -4,9 +4,13 @@ import Browser
 import Html exposing (Html, text, div, h1, img)
 import Html.Attributes exposing (src)
 import Http
-import Json.Decode exposing (Decoder, string, int, bool)
+import Json.Decode exposing (Decoder, string, int, bool, list)
 import Json.Decode.Pipeline exposing (required)
 import RemoteData
+import Debug exposing (toString)
+import Html exposing (button)
+import Html.Events exposing (onClick)
+import Html.Events exposing (on)
 ---- MODEL ----
 
 
@@ -30,19 +34,21 @@ getToDoItems : Cmd Msg
 getToDoItems = 
     Http.get 
         { url = "https://jsonplaceholder.typicode.com/todos"
-        , expect = Http.expectJson (RemoteData.fromResult >> GotItems) itemDecoder
+        , expect = Http.expectJson (RemoteData.fromResult >> GotItems) (list itemDecoder)
         }
 
 type alias Model =
     {
-        toDoItem : RemoteData.WebData ToDoItem
+        toDoItems : RemoteData.WebData (List ToDoItem)
     }
         
-
+type alias ToDoResponse = 
+    RemoteData.WebData (List ToDoItem)
 
 init : ( Model, Cmd Msg )
-init =
-    ({toDoItem = RemoteData.Loading},getToDoItems)
+init = ({ toDoItems = RemoteData.NotAsked}
+    , Cmd.none)
+    
 
 
 
@@ -50,14 +56,19 @@ init =
 
 
 type Msg
-    = GotItems (RemoteData.WebData ToDoItem)
+    = GotItems ToDoResponse
+    | ClickedFetchTodos
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
    case msg of
-      GotItems response ->
-        ( {model | toDoItem = response}
+    ClickedFetchTodos -> 
+        ({model | toDoItems = RemoteData.Loading}
+        , getToDoItems
+        )
+    GotItems response ->
+        ( {model | toDoItems = response}
         , Cmd.none
         )
 ---- VIEW ----
@@ -68,17 +79,31 @@ view model =
     div []
         [ img [ src "/checklist-logo.png" ] []
         , h1 [] [ text "Welcome to my TODO app" ]
+        , button [onClick ClickedFetchTodos] [text "SHOW TO DO LIST"]
+        , viewItems model.toDoItems
         ]
 
-viewItems : Model -> ToDoItem -> Html msg 
+viewItems : ToDoResponse -> Html msg 
 viewItems model = 
-    case model.toDoItem of
-            RemoteData.NotAsked -> div [][ text "initializing"]
-            RemoteData.Loading -> div [][ text "loading"]
-            RemoteData.Failure toDoItem -> div [][ text "failed to load"]
-            RemoteData.Success toDoItem -> div [][text model.toDoItem]
+    case model of
+            RemoteData.NotAsked -> div [][ text ""]
+            RemoteData.Loading -> div [][ text "loading list..."]
+            RemoteData.Failure _ -> div [][ text "failed to load"]
+            RemoteData.Success toDoItems ->     
+                div [] (List.map viewFinalItems toDoItems)
+viewFinalItems : ToDoItem -> Html msg
+viewFinalItems toDoItem = 
+    let
+        toDoItemFormated = 
+            toDoItemFormat toDoItem
+    in
+        div[][text toDoItemFormated]
 
+toDoItemFormat : ToDoItem -> String
     
+toDoItemFormat toDoItem =
+            String.fromInt toDoItem.id ++ " " ++ toDoItem.title
+ 
 ---- PROGRAM ----
 
 
