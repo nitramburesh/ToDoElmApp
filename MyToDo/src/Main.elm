@@ -87,7 +87,7 @@ view : Model -> Html Msg
 view model =
     div []
         [ img [ src "/logo.png" ] []
-        , styledh1 [] [ text "Welcome to my TODO APP!" ]
+        , styledh1 [] [ text "welcome to: to do app 3000!" ]
         , btn [ onClick FetchToDos ] [ text "show to do list" ]
         , wrapper []
             [ itemWrapper [] [ viewToDos model ]
