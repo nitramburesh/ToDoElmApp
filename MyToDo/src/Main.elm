@@ -8,8 +8,8 @@ import Html.Styled.Events exposing (onClick)
 import Http
 import Json.Decode exposing (Decoder, bool, int, string)
 import Json.Decode.Pipeline exposing (required)
-import RemoteData exposing (WebData)
-import Styled exposing (btn, itemWrapper, itemDiv, wrapper, styledh1, textDiv, fetchMsg, styledCheckBox)
+import RemoteData exposing (WebData, isLoading)
+import Styled exposing (btn, fetchMsg, itemDiv, itemWrapper, styledCheckBox, styledh1, textDiv, wrapper)
 
 
 
@@ -74,7 +74,7 @@ update msg model =
             )
 
         FetchToDos ->
-            ( model
+            ( { model | toDoItems = RemoteData.Loading }
             , getToDoItems
             )
 
@@ -105,7 +105,7 @@ viewToDos model =
             fetchMsg [] [ text "loading items..." ]
 
         RemoteData.Failure _ ->
-            fetchMsg [] [ text "loading items failed." ]
+            fetchMsg [] [ text "loading items failed..." ]
 
         RemoteData.Success toDoItems ->
             div [] (viewToDoList toDoItems)
