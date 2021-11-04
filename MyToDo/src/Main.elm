@@ -1,13 +1,15 @@
 module Main exposing (..)
 
 import Browser
-import Html exposing (Html, button, div, h1, img, text)
-import Html.Attributes exposing (src)
-import Html.Events exposing (onClick)
+import Html
+import Html.Styled exposing (Html, button, div, h1, img, input, text)
+import Html.Styled.Attributes exposing (src, type_)
+import Html.Styled.Events exposing (onClick)
 import Http
 import Json.Decode exposing (Decoder, bool, int, string)
 import Json.Decode.Pipeline exposing (required)
 import RemoteData exposing (WebData)
+import Styled exposing (btn, itemWrapper, itemDiv, wrapper, styledh1, textDiv, fetchMsg, styledCheckBox)
 
 
 
@@ -85,9 +87,11 @@ view : Model -> Html Msg
 view model =
     div []
         [ img [ src "/logo.png" ] []
-        , h1 [] [ text "Heyo, what's up!" ]
-        , button [ onClick FetchToDos ] [ text "fetch me items" ]
-        , viewToDos model
+        , styledh1 [] [ text "Welcome to my TODO APP!" ]
+        , btn [ onClick FetchToDos ] [ text "show to do list" ]
+        , wrapper []
+            [ itemWrapper [] [ viewToDos model ]
+            ]
         ]
 
 
@@ -95,13 +99,13 @@ viewToDos : Model -> Html msg
 viewToDos model =
     case model.toDoItems of
         RemoteData.NotAsked ->
-            div [] [ text "not asked yet" ]
+            fetchMsg [] [ text "press the button to view to do list" ]
 
         RemoteData.Loading ->
-            div [] [ text "loading items..." ]
+            fetchMsg [] [ text "loading items..." ]
 
         RemoteData.Failure _ ->
-            div [] [ text "loading items failed." ]
+            fetchMsg [] [ text "loading items failed." ]
 
         RemoteData.Success toDoItems ->
             div [] (viewToDoList toDoItems)
@@ -114,14 +118,19 @@ viewToDoList toDoItems =
             formatItems toDoItems
 
         mappedItems =
-            List.map (\item -> div [] [ text item ]) formattedItems
+            List.map
+                (\item ->
+                    itemDiv []
+                        [ styledCheckBox [ type_ "checkbox" ] [], textDiv [] [ text item ] ]
+                )
+                formattedItems
     in
     mappedItems
 
 
 formatItems : List ToDoItem -> List String
 formatItems toDoItems =
-    List.map (\item -> String.fromInt item.id ++ " - " ++ item.title) toDoItems
+    List.map (\item -> item.title) toDoItems
 
 
 
@@ -131,7 +140,7 @@ formatItems toDoItems =
 main : Program () Model Msg
 main =
     Browser.element
-        { view = view
+        { view = view >> Html.Styled.toUnstyled
         , init = \_ -> init
         , update = update
         , subscriptions = always Sub.none
