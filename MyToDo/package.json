@@ -1,6 +1,12 @@
 {
   "devDependencies": {
+    "elm-analyse": "^0.16.5",
     "elm-format": "^0.8.5",
-    "elm-test": "^0.19.1-revision7"
+    "elm-test": "^0.19.1-revision7",
+    "prettier": "^2.4.1"
+  },
+  "scripts": {
+    "start": "npx elm-app start",
+    "elm-analyse": "npx elm-analyse -s -p 50000"
   }
 }

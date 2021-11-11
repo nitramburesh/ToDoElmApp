@@ -1,10 +1,19 @@
-import './main.css';
-import { Elm } from './Main.elm';
-import * as serviceWorker from './serviceWorker';
+import "./main.css";
+import { Elm } from "./Main.elm";
+import * as serviceWorker from "./serviceWorker";
 
-Elm.Main.init({
-  node: document.getElementById('root')
-});
+const initMainApp = () => {
+  const node = document.getElementById("root");
+
+  const base_url = process.env.ELM_APP_BASE_API_URL;
+
+  Elm.Main.init({
+    node,
+    flags: { base_url },
+  });
+};
+
+initMainApp();
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
