@@ -8,5 +8,8 @@
   "scripts": {
     "start": "npx elm-app start",
     "elm-analyse": "npx elm-analyse -s -p 50000"
+  },
+  "dependencies": {
+    "elm-live": "^4.0.2"
   }
 }

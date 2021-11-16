@@ -7,11 +7,19 @@ const initMainApp = () => {
 
   const base_url = process.env.ELM_APP_BASE_API_URL;
 
-  Elm.Main.init({
+  const app = Elm.Main.init({
     node,
     flags: { base_url },
   });
+
+  // app.ports.storeItems.subscribe((items) => console.log(items));
 };
+
+// TODO ---> send and recieve JSON that contains my checked data from local storage
+
+// app.ports.storeItems.subscribe(function(message) {
+//   port.send(message);
+// });
 
 initMainApp();
 

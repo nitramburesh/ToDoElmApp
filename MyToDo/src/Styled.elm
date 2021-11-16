@@ -1,9 +1,8 @@
-module Styled exposing (btn, itemDiv, itemWrapper, styledh1, styledText, textDiv, wrapper)
+module Styled exposing (btn, itemDiv, itemWrapper, styledInput, styledText, styledh1, textDiv, wrapper)
 
 import Css exposing (..)
-import Css.Media
 import Html.Styled as HtmlStyled
-import Html.Styled.Attributes as Attributes exposing (css)
+import Html.Styled.Attributes as Attributes
 import Html.Styled.Events as Events
 
 
@@ -91,6 +90,23 @@ styledText =
             , fontSize (rem 1.2)
             , color theme.white
             ]
+        ]
+
+
+styledInput : (String -> msg) -> String -> List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
+styledInput msg placeholder =
+    HtmlStyled.input
+        [ Attributes.css
+            [ marginBottom (rem 3)
+            , width (rem 30)
+            , height (rem 2)
+            , borderRadius (rem 2)
+            , textAlign center
+            , fontSize (rem 1)
+            , fontFamilies [ "Courier New" ]
+            ]
+        , Events.onInput msg
+        , Attributes.placeholder placeholder
         ]
 
 
