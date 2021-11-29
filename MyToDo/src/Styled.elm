@@ -1,4 +1,4 @@
-module Styled exposing (btn, itemDiv, itemWrapper, styledInput, styledText, styledh1, textDiv, wrapper)
+module Styled exposing (ButtonVariant(..), btn, itemDiv, itemWrapper, styledInput, styledText, styledh1, textDiv, wrapper)
 
 import Css exposing (..)
 import Html.Styled as HtmlStyled
@@ -6,38 +6,59 @@ import Html.Styled.Attributes as Attributes
 import Html.Styled.Events as Events
 
 
-theme : { black : Color, white : Color, brown : Color, purpleNavy : Color, red : Color, shadow : Color, redOrange : Color }
-theme =
-    { black = hex "000000"
-    , white = hex "FFFFFF"
-    , purpleNavy = hex "40476D"
-    , brown = hex "A47551"
-    , red = hex "FC2E20"
-    , redOrange = hex "FF5C4D"
-    , shadow = hex "565857"
-    }
+type ButtonVariant
+    = Red
+    | Blue
 
 
-btn : msg -> List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
-btn msg =
-    HtmlStyled.button
-        [ Attributes.css
-            [ marginTop (rem 1)
+btn : ButtonVariant -> msg -> List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
+btn variant msg =
+    let
+        styles =
+            [ margin (rem 3)
             , borderStyle none
             , marginBottom (rem 1)
             , color theme.white
             , padding (rem 1)
             , borderRadius (rem 1)
-            , backgroundColor theme.redOrange
             , textTransform uppercase
             , fontFamilies [ "Courier New" ]
             , fontSize (rem 1.5)
-            , hover
-                [ backgroundColor theme.red
-                ]
             ]
+
+        variantStyles =
+            case variant of
+                Red ->
+                    [ backgroundColor theme.redOrange
+                    , hover
+                        [ backgroundColor theme.red
+                        ]
+                    ]
+
+                Blue ->
+                    [ backgroundColor theme.purpleNavy
+                    , hover
+                        [ backgroundColor theme.navyBlue
+                        ]
+                    ]
+    in
+    HtmlStyled.button
+        [ Attributes.css <| styles ++ variantStyles
         , Events.onClick msg
         ]
+
+
+theme : { black : Color, white : Color, brown : Color, purpleNavy : Color, navyBlue : Color, red : Color, shadow : Color, redOrange : Color }
+theme =
+    { black = hex "000000"
+    , white = hex "FFFFFF"
+    , purpleNavy = hex "2E8BC0"
+    , brown = hex "A47551"
+    , red = hex "FC2E20"
+    , redOrange = hex "FF5C4D"
+    , shadow = hex "565857"
+    , navyBlue = hex "05445E"
+    }
 
 
 itemDiv : List (HtmlStyled.Html msg) -> HtmlStyled.Html msg

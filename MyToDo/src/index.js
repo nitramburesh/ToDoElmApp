@@ -5,21 +5,26 @@ import * as serviceWorker from "./serviceWorker";
 const initMainApp = () => {
   const node = document.getElementById("root");
 
-  const base_url = process.env.ELM_APP_BASE_API_URL;
+  const { ELM_APP_BASE_API_URL } = process.env;
+
+  const flags = {
+    baseApiUrl: ELM_APP_BASE_API_URL,
+    toDoItems: JSON.parse(localStorage.getItem("to-do-items")),
+  };
 
   const app = Elm.Main.init({
     node,
-    flags: { base_url },
+    flags,
+  });
+
+  app.ports.storeItems.subscribe(function (items) {
+    localStorage.setItem("to-do-items", JSON.stringify(items));
   });
 
   // app.ports.storeItems.subscribe((items) => console.log(items));
 };
 
 // TODO ---> send and recieve JSON that contains my checked data from local storage
-
-// app.ports.storeItems.subscribe(function(message) {
-//   port.send(message);
-// });
 
 initMainApp();
 
