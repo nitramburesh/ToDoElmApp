@@ -1,9 +1,11 @@
-module ToDoItems exposing (ToDoItem, decodeToDoItem, decodeToDoItems, encodeToDoItems, filterItems, initialToDoItems)
+port module ToDoItems exposing (ToDoItem, decodeToDoItem, decodeToDoItems, encodeToDoItems, filterItems, initialToDoItems, storeItems)
 
-import Html.Styled as HtmlStyled
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Pipeline
 import Json.Encode as Encode
+
+
+port storeItems : Encode.Value -> Cmd msg
 
 
 type alias ToDoItem =

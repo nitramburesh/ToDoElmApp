@@ -1,16 +1,13 @@
-port module Pages.ToDoItemPage exposing (Model, Msg, init, update, view)
+module Pages.ToDoItemPage exposing (Model, Msg, init, update, view)
 
+import Api
 import Html.Styled as HtmlStyled
 import Html.Styled.Attributes as Attributes
-import Html.Styled.Events as HtmlEvents
-import Http
-import Json.Encode as Encode
 import RemoteData
+import Taco
 import Styled
 import ToDoItems as Items
-
-
-port storeItems : Encode.Value -> Cmd msg
+import Translations
 
 
 type Msg
@@ -19,9 +16,14 @@ type Msg
     | ClickedCompleteToDoItem Int Bool
     | InsertedSearchedText String
     | ClickedInitialState
+    | InsertedToken String
 
 
-type alias Model =
+type Model
+    = ModelInternal ModelInternalPayload
+
+
+type alias ModelInternalPayload =
     { toDoItemsWebData : RemoteData.WebData (List Items.ToDoItem)
     , toDoItems : List Items.ToDoItem
     , showingItems : Bool
@@ -31,43 +33,44 @@ type alias Model =
 
 init : List Items.ToDoItem -> ( Model, Cmd Msg )
 init toDoItems =
-    ( { toDoItemsWebData = RemoteData.NotAsked
-      , toDoItems = toDoItems
-      , showingItems = False
-      , searchedText = ""
-      }
+    ( ModelInternal
+        { toDoItemsWebData = RemoteData.NotAsked
+        , toDoItems = toDoItems
+        , showingItems = False
+        , searchedText = ""
+        }
     , Cmd.none
     )
 
 
-toggleToDoList : Model -> Model
+toggleToDoList : ModelInternalPayload -> ModelInternalPayload
 toggleToDoList model =
-    { model | showingItems = not model.showingItems }
+    { model | showingItems = not model.showingItems, searchedText = "" }
 
 
-fetchToDoItems : String -> Cmd Msg
-fetchToDoItems baseApiUrl =
-    Http.get
-        { url = baseApiUrl ++ "todos"
-        , expect = Http.expectJson (\response -> response |> RemoteData.fromResult |> FetchResponse) Items.decodeToDoItems
-        }
+fetchToDoItems : Api.Api -> Cmd Msg
+fetchToDoItems api =
+    Api.get Items.decodeToDoItems FetchResponse "todos" api
 
 
-update : Msg -> Model -> String -> ( Model, Cmd Msg )
-update msg model baseApiUrl =
+update : Msg -> Model -> Taco.Taco -> ( Model, Cmd Msg, Taco.Msg )
+update msg (ModelInternal model) sharedState =
     case msg of
         FetchResponse response ->
-            ( { model
-                | toDoItemsWebData = response
-                , toDoItems = RemoteData.withDefault model.toDoItems response
-              }
+            ( ModelInternal
+                { model
+                    | toDoItemsWebData = response
+                    , toDoItems = RemoteData.withDefault model.toDoItems response
+                }
               -- always ()
             , Cmd.none
+            , Taco.NoUpdate
             )
 
         ToggledToDoList ->
-            ( toggleToDoList model
+            ( ModelInternal <| toggleToDoList model
             , Cmd.none
+            , Taco.NoUpdate
             )
 
         ClickedCompleteToDoItem id completed ->
@@ -82,81 +85,117 @@ update msg model baseApiUrl =
                 updatedToDoItems =
                     List.map updatedToDoItem model.toDoItems
             in
-            ( { model | toDoItems = updatedToDoItems }
-            , storeItems <| Items.encodeToDoItems updatedToDoItems
+            ( ModelInternal { model | toDoItems = updatedToDoItems }
+            , Items.storeItems <| Items.encodeToDoItems updatedToDoItems
+            , Taco.NoUpdate
             )
 
         InsertedSearchedText searchedText ->
-            ( { model | searchedText = searchedText }
+            ( ModelInternal { model | searchedText = searchedText }
             , Cmd.none
+            , Taco.NoUpdate
             )
 
         ClickedInitialState ->
-            ( { model | toDoItemsWebData = RemoteData.Loading, showingItems = True }
-            , fetchToDoItems baseApiUrl
+            ( ModelInternal { model | toDoItemsWebData = RemoteData.Loading, showingItems = True }
+            , fetchToDoItems (Taco.getApi sharedState)
+            , Taco.NoUpdate
+            )
+
+        InsertedToken accessToken ->
+            ( ModelInternal model
+            , Cmd.none
+            , Taco.SetAccessToken accessToken
             )
 
 
-buttonTitle : Model -> String
-buttonTitle { showingItems } =
+buttonTitle : ModelInternalPayload -> Taco.Taco -> String
+buttonTitle { showingItems } sharedState =
+    let
+        { t } =
+            Translations.translators (Taco.getTranslations sharedState)
+    in
     if showingItems then
-        "Hide list"
+        t "buttons.hideList"
 
     else
-        "Show list"
+        t "buttons.showList"
 
 
-renderToDoItems : Model -> List (HtmlStyled.Html Msg)
+renderToDoItems : ModelInternalPayload -> List (HtmlStyled.Html Msg)
 renderToDoItems { searchedText, toDoItems } =
     toDoItems
         |> Items.filterItems searchedText
         |> List.map
             (\item ->
                 Styled.itemDiv
-                    [ HtmlStyled.input
-                        [ Attributes.type_ "checkbox"
-                        , Attributes.checked item.completed
-                        , HtmlEvents.onCheck <| ClickedCompleteToDoItem item.id
-                        ]
+                    [ Styled.checkbox
+                        item.completed
+                        (ClickedCompleteToDoItem item.id)
                         []
                     , Styled.textDiv [ HtmlStyled.text item.title ]
                     ]
             )
 
 
-viewToDos : Model -> HtmlStyled.Html Msg
-viewToDos model =
+viewToDos : ModelInternalPayload -> Taco.Taco -> HtmlStyled.Html Msg
+viewToDos model sharedState =
+    let
+        { t } =
+            Translations.translators (Taco.getTranslations sharedState)
+    in
     HtmlStyled.div []
         [ case model.toDoItemsWebData of
             RemoteData.NotAsked ->
                 Styled.styledText [ HtmlStyled.text "" ]
 
             RemoteData.Loading ->
-                Styled.styledText [ HtmlStyled.text "loading items..." ]
+                Styled.styledText [ HtmlStyled.text (t "text.loading") ]
 
             RemoteData.Failure _ ->
-                Styled.styledText [ HtmlStyled.text "loading items failed..." ]
+                Styled.styledText [ HtmlStyled.text (t "text.loadingFailed") ]
 
             RemoteData.Success _ ->
                 HtmlStyled.div [] []
         , if model.showingItems then
             HtmlStyled.div
                 []
-                [ Styled.wrapper [ Styled.styledInput InsertedSearchedText "Search items..." [] ]
+                [ Styled.wrapper [ Styled.styledInput InsertedSearchedText (t "placeholders.searchItems") [] ]
                 , HtmlStyled.div [] (renderToDoItems model)
                 ]
 
           else
-            Styled.styledText [ HtmlStyled.text "click button to show the list" ]
+            Styled.styledText [ HtmlStyled.text (t "text.showListMessage") ]
         ]
 
 
-view : Model -> HtmlStyled.Html Msg
-view model =
+view : Model -> Taco.Taco -> HtmlStyled.Html Msg
+view (ModelInternal modelInternalPayload) sharedState =
+    let
+        { t } =
+            Translations.translators (Taco.getTranslations sharedState)
+    in
     HtmlStyled.div []
         [ HtmlStyled.img [ Attributes.src "/logo.png" ] []
-        , Styled.styledh1 [ HtmlStyled.text "welcome to: to do app 3000!" ]
-        , Styled.btn Styled.Red ToggledToDoList [ HtmlStyled.text (buttonTitle model) ]
-        , Styled.btn Styled.Blue ClickedInitialState [ HtmlStyled.text "initial state" ]
-        , Styled.wrapper [ Styled.itemWrapper [ viewToDos model ] ]
+        , setAccessTokenView sharedState
+        , Styled.styledh1 [ HtmlStyled.text (t "text.welcomeHeading") ]
+        , Styled.btn Styled.RedSquare ToggledToDoList [ HtmlStyled.text (buttonTitle modelInternalPayload sharedState) ]
+        , Styled.btn Styled.BlueSquare
+            ClickedInitialState
+            [ HtmlStyled.text (t "buttons.initialState") ]
+        , Styled.wrapper [ Styled.itemsWrapper [ viewToDos modelInternalPayload sharedState ] ]
+        ]
+
+
+setAccessTokenView : Taco.Taco -> HtmlStyled.Html Msg
+setAccessTokenView sharedState =
+    let
+        { t } =
+            Translations.translators (Taco.getTranslations sharedState)
+    in
+    Styled.centeredWrapper
+        [ Styled.styledInput
+            InsertedToken
+            (t "placeholders.insertToken")
+            []
         ]

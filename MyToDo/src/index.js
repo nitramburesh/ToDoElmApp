@@ -1,6 +1,8 @@
 import "./main.css";
 import { Elm } from "./Main.elm";
 import * as serviceWorker from "./serviceWorker";
+import en from "./translationsEn.json";
+import ru from "./translationsRu.json";
 
 const initMainApp = () => {
   const node = document.getElementById("root");
@@ -10,18 +12,16 @@ const initMainApp = () => {
   const flags = {
     baseApiUrl: ELM_APP_BASE_API_URL,
     toDoItems: JSON.parse(localStorage.getItem("to-do-items")),
+    accessToken: "accessToken",
+    translations: { en, ru },
   };
-
   const app = Elm.Main.init({
     node,
     flags,
   });
-
   app.ports.storeItems.subscribe(function (items) {
     localStorage.setItem("to-do-items", JSON.stringify(items));
   });
-
-  // app.ports.storeItems.subscribe((items) => console.log(items));
 };
 
 // TODO ---> send and recieve JSON that contains my checked data from local storage

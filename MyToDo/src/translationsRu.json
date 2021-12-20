@@ -1,0 +1,24 @@
+{
+  "buttons": {
+    "nextPage": "следущая страница",
+    "home": "домой",
+    "google": "google",
+    "showList": "показать список",
+    "hideList": "Скрыть список",
+    "initialState": "начальное состояние",
+    "english" : "английский",
+    "russian" : "русский",
+    "language" : "язык"
+  },
+  "text": {
+    "welcomeHeading": "Добро пожаловать в: TO DO APP 3000!",
+    "showListMessage": "НАЖМИТЕ КНОПКУ, ЧТОБЫ ПОКАЗАТЬ СПИСОК",
+    "loading": "загрузка...",
+    "loadingFailed": "загрузка не удалась",
+    "thisIsNextPage": "это следующая страница"
+  },
+  "placeholders": {
+    "searchItems": "поиск предметов...",
+    "insertToken": "вставьте свой токен..."
+  }
+}

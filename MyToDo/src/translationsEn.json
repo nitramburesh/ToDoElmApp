@@ -1,0 +1,24 @@
+{
+  "buttons": {
+    "nextPage": "next page",
+    "home": "home",
+    "google": "google",
+    "showList": "show list",
+    "hideList": "Hide List",
+    "initialState": "initial state",
+    "english" : "english",
+    "russian" : "russian",
+    "language" : "language"
+  },
+  "text": {
+    "welcomeHeading": "WELCOME TO: TO DO APP 3000!",
+    "showListMessage": "CLICK BUTTON TO SHOW THE LIST",
+    "loading": "loading items...",
+    "loadingFailed": "loading items failed",
+    "thisIsNextPage" : "this is next page"
+  },
+  "placeholders": {
+    "searchItems": "search items...",
+    "insertToken": "insert your token..."
+  }
+}
