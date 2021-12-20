@@ -20,6 +20,8 @@ type alias TacoPayload =
 type Msg
     = NoUpdate
     | SetAccessToken String
+    | UpdatedTranslations Translations.Model
+    | UpdatedApi Api.Api
 
 
 
@@ -39,6 +41,20 @@ update msg (Taco sharedStatePayload) =
 
                 updatedTacoPayload =
                     { sharedStatePayload | api = updatedApi }
+            in
+            Taco updatedTacoPayload
+
+        UpdatedTranslations translations ->
+            let
+                updatedTacoPayload =
+                    { sharedStatePayload | translations = translations }
+            in
+            Taco updatedTacoPayload 
+
+        UpdatedApi api -> 
+            let
+                updatedTacoPayload =
+                    {sharedStatePayload | api = api}
             in
             Taco updatedTacoPayload
 
