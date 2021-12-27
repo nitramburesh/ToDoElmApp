@@ -11071,7 +11071,6 @@ type alias Process =
                 case 'Grey':
                     return _List_fromArray([
                         $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.gray),
-                        $rtfeldman$elm_css$Css$borderRadius($rtfeldman$elm_css$Css$rem(1)),
                         $rtfeldman$elm_css$Css$hover(_List_fromArray([
                             $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.grayer)
                         ])),
@@ -11198,9 +11197,24 @@ type alias Process =
             ]))
         ]));
     };
+    var $rtfeldman$elm_css$Css$prop6 = F7(function(key, argA, argB, argC, argD, argE, argF) {
+        return A2($rtfeldman$elm_css$Css$property, key, A2($elm$core$String$join, ' ', _List_fromArray([
+            argA.value,
+            argB.value,
+            argC.value,
+            argD.value,
+            argE.value,
+            argF.value
+        ])));
+    });
+    var $rtfeldman$elm_css$Css$boxShadow6 = $rtfeldman$elm_css$Css$prop6('box-shadow');
     var $rtfeldman$elm_css$Css$column = _Utils_update($rtfeldman$elm_css$Css$row, {
         value: 'column'
     });
+    var $rtfeldman$elm_css$Css$inset = {
+        borderStyle: $rtfeldman$elm_css$Css$Structure$Compatible,
+        value: 'inset'
+    };
     var $rtfeldman$elm_css$Css$prop2 = F3(function(key, argA, argB) {
         return A2($rtfeldman$elm_css$Css$property, key, A2($elm$core$String$join, ' ', _List_fromArray([
             argA.value,
@@ -11219,7 +11233,7 @@ type alias Process =
             $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.white),
             A2($rtfeldman$elm_css$Css$padding2, $rtfeldman$elm_css$Css$rem(1), $rtfeldman$elm_css$Css$rem(1)),
             $rtfeldman$elm_css$Css$borderRadius($rtfeldman$elm_css$Css$rem(2)),
-            A4($rtfeldman$elm_css$Css$boxShadow4, $rtfeldman$elm_css$Css$rem(0.3), $rtfeldman$elm_css$Css$rem(0.3), $rtfeldman$elm_css$Css$rem(0), $author$project$Styled$theme.gray)
+            A6($rtfeldman$elm_css$Css$boxShadow6, $rtfeldman$elm_css$Css$inset, $rtfeldman$elm_css$Css$rem(0), $rtfeldman$elm_css$Css$rem(0), $rtfeldman$elm_css$Css$rem(0.4), $rtfeldman$elm_css$Css$rem(0.3), $author$project$Styled$theme.lightShadow)
         ]))
     ]));
     var $author$project$Taco$getTime = function(_v0) {
@@ -11340,6 +11354,18 @@ type alias Process =
         ]))
     ]));
     var $rtfeldman$elm_css$Html$Styled$img = $rtfeldman$elm_css$Html$Styled$node('img');
+    var $rtfeldman$elm_css$Html$Styled$Attributes$src = function(url) {
+        return A2($rtfeldman$elm_css$Html$Styled$Attributes$stringProperty, 'src', url);
+    };
+    var $author$project$Styled$heroLogo = function(imgSource) {
+        return $rtfeldman$elm_css$Html$Styled$img(_List_fromArray([
+            $rtfeldman$elm_css$Html$Styled$Attributes$src(imgSource),
+            $rtfeldman$elm_css$Html$Styled$Attributes$css(_List_fromArray([
+                $rtfeldman$elm_css$Css$width($rtfeldman$elm_css$Css$rem(20)),
+                $rtfeldman$elm_css$Css$margin($rtfeldman$elm_css$Css$rem(0))
+            ]))
+        ]));
+    };
     var $rtfeldman$elm_css$Css$left = $rtfeldman$elm_css$Css$prop1('left');
     var $rtfeldman$elm_css$Css$marginTop = $rtfeldman$elm_css$Css$prop1('margin-top');
     var $author$project$Styled$itemsWrapper = $rtfeldman$elm_css$Html$Styled$div(_List_fromArray([
@@ -11383,7 +11409,7 @@ type alias Process =
     var $author$project$Styled$styledInput = F2(function(msg, placeholder) {
         return $rtfeldman$elm_css$Html$Styled$input(_List_fromArray([
             $rtfeldman$elm_css$Html$Styled$Attributes$css(_List_fromArray([
-                $rtfeldman$elm_css$Css$marginBottom($rtfeldman$elm_css$Css$rem(3)),
+                A2($rtfeldman$elm_css$Css$margin2, $rtfeldman$elm_css$Css$rem(1.5), $rtfeldman$elm_css$Css$rem(0)),
                 $rtfeldman$elm_css$Css$width($rtfeldman$elm_css$Css$rem(30)),
                 $rtfeldman$elm_css$Css$height($rtfeldman$elm_css$Css$rem(2)),
                 $rtfeldman$elm_css$Css$borderRadius($rtfeldman$elm_css$Css$rem(2)),
@@ -11404,9 +11430,6 @@ type alias Process =
             A3($author$project$Styled$styledInput, $author$project$Pages$ToDoItemPage$InsertedToken, t('placeholders.insertToken'), _List_Nil)
         ]));
     };
-    var $rtfeldman$elm_css$Html$Styled$Attributes$src = function(url) {
-        return A2($rtfeldman$elm_css$Html$Styled$Attributes$stringProperty, 'src', url);
-    };
     var $rtfeldman$elm_css$Css$letterSpacing = $rtfeldman$elm_css$Css$prop1('letter-spacing');
     var $author$project$Styled$styledh1 = $rtfeldman$elm_css$Html$Styled$h1(_List_fromArray([
         $rtfeldman$elm_css$Html$Styled$Attributes$css(_List_fromArray([
@@ -11415,7 +11438,9 @@ type alias Process =
             ])),
             $rtfeldman$elm_css$Css$textTransform($rtfeldman$elm_css$Css$uppercase),
             $rtfeldman$elm_css$Css$fontSize($rtfeldman$elm_css$Css$rem(4)),
-            $rtfeldman$elm_css$Css$letterSpacing($rtfeldman$elm_css$Css$rem(0.2))
+            $rtfeldman$elm_css$Css$letterSpacing($rtfeldman$elm_css$Css$rem(0.2)),
+            $rtfeldman$elm_css$Css$marginTop($rtfeldman$elm_css$Css$rem(3)),
+            $rtfeldman$elm_css$Css$marginBottom($rtfeldman$elm_css$Css$rem(0))
         ]))
     ]));
     var $author$project$Pages$ToDoItemPage$InsertedSearchedText = function(a) {
@@ -11553,9 +11578,7 @@ type alias Process =
                 $author$project$Styled$styledh1(_List_fromArray([
                     $rtfeldman$elm_css$Html$Styled$text(t('text.welcomeHeading'))
                 ])),
-                A2($rtfeldman$elm_css$Html$Styled$img, _List_fromArray([
-                    $rtfeldman$elm_css$Html$Styled$Attributes$src('/logo.png')
-                ]), _List_Nil),
+                A2($author$project$Styled$heroLogo, '/logo.png', _List_Nil),
                 $author$project$Pages$ToDoItemPage$setAccessTokenView(sharedState)
             ])),
             A3($author$project$Styled$btn, $author$project$Styled$RedSquare, $author$project$Pages$ToDoItemPage$ToggledToDoList, _List_fromArray([
