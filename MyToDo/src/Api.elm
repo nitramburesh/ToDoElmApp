@@ -26,7 +26,7 @@ init { baseApiUrl, accessToken } =
 
 
 setAccessToken : String -> Api -> Api
-setAccessToken token (Api { baseApiUrl, accessToken }) =
+setAccessToken token (Api { baseApiUrl }) =
     let
         updatedPayload =
             { baseApiUrl = baseApiUrl, accessToken = token }

@@ -8693,7 +8693,6 @@ type alias Process =
     };
     var $author$project$Api$setAccessToken = F2(function(token, _v0) {
         var baseApiUrl = _v0.a.baseApiUrl;
-        var accessToken = _v0.a.accessToken;
         var updatedPayload = {
             accessToken: token,
             baseApiUrl: baseApiUrl
@@ -11201,6 +11200,66 @@ type alias Process =
             ]))
         ]));
     };
+    var $author$project$Taco$getTime = function(_v0) {
+        var currentTime = _v0.a.currentTime;
+        return currentTime;
+    };
+    var $elm$time$Time$flooredDiv = F2(function(numerator, denominator) {
+        return $elm$core$Basics$floor(numerator / denominator);
+    });
+    var $elm$time$Time$posixToMillis = function(_v0) {
+        var millis = _v0.a;
+        return millis;
+    };
+    var $elm$time$Time$toAdjustedMinutesHelp = F3(function(defaultOffset, posixMinutes, eras) {
+        toAdjustedMinutesHelp: while(true){
+            if (!eras.b) return posixMinutes + defaultOffset;
+            else {
+                var era = eras.a;
+                var olderEras = eras.b;
+                if (_Utils_cmp(era.start, posixMinutes) < 0) return posixMinutes + era.offset;
+                else {
+                    var $temp$defaultOffset = defaultOffset, $temp$posixMinutes = posixMinutes, $temp$eras = olderEras;
+                    defaultOffset = $temp$defaultOffset;
+                    posixMinutes = $temp$posixMinutes;
+                    eras = $temp$eras;
+                    continue toAdjustedMinutesHelp;
+                }
+            }
+        }
+    });
+    var $elm$time$Time$toAdjustedMinutes = F2(function(_v0, time) {
+        var defaultOffset = _v0.a;
+        var eras = _v0.b;
+        return A3($elm$time$Time$toAdjustedMinutesHelp, defaultOffset, A2($elm$time$Time$flooredDiv, $elm$time$Time$posixToMillis(time), 60000), eras);
+    });
+    var $elm$time$Time$toHour = F2(function(zone, time) {
+        return A2($elm$core$Basics$modBy, 24, A2($elm$time$Time$flooredDiv, A2($elm$time$Time$toAdjustedMinutes, zone, time), 60));
+    });
+    var $elm$time$Time$toMinute = F2(function(zone, time) {
+        return A2($elm$core$Basics$modBy, 60, A2($elm$time$Time$toAdjustedMinutes, zone, time));
+    });
+    var $elm$time$Time$toSecond = F2(function(_v0, time) {
+        return A2($elm$core$Basics$modBy, 60, A2($elm$time$Time$flooredDiv, $elm$time$Time$posixToMillis(time), 1000));
+    });
+    var $elm$time$Time$utc = A2($elm$time$Time$Zone, 0, _List_Nil);
+    var $author$project$TimeModule$viewTimeAsString = function(sharedState) {
+        var time = $author$project$Taco$getTime(sharedState);
+        var second = $elm$core$String$fromInt(A2($elm$time$Time$toSecond, $elm$time$Time$utc, time));
+        var rawSecond = A2($elm$time$Time$toSecond, $elm$time$Time$utc, time);
+        var secondComma = rawSecond > 9 ? ':' : ':0';
+        var rawMinute = A2($elm$time$Time$toMinute, $elm$time$Time$utc, time);
+        var minute = $elm$core$String$fromInt(A2($elm$time$Time$toMinute, $elm$time$Time$utc, time));
+        var hour = $elm$core$String$fromInt(A2($elm$time$Time$toHour, $elm$time$Time$utc, time));
+        var firstComma = rawMinute > 9 ? ':' : ':0';
+        return _Utils_ap(hour, _Utils_ap(firstComma, _Utils_ap(minute, _Utils_ap(secondComma, second))));
+    };
+    var $author$project$TimeModule$viewTimeWrapped = function(sharedState) {
+        var time = $author$project$TimeModule$viewTimeAsString(sharedState);
+        return A2($rtfeldman$elm_css$Html$Styled$div, _List_Nil, _List_fromArray([
+            $rtfeldman$elm_css$Html$Styled$text(time)
+        ]));
+    };
     var $author$project$Header$navigationHeaderView = function(sharedState) {
         var _v0 = $author$project$Translations$translators($author$project$Taco$getTranslations(sharedState));
         var t = _v0.t;
@@ -11216,7 +11275,8 @@ type alias Process =
                     $rtfeldman$elm_css$Html$Styled$text(t('buttons.google'))
                 ]))
             ])),
-            $author$project$Header$translationButtonsView(sharedState)
+            $author$project$Header$translationButtonsView(sharedState),
+            $author$project$TimeModule$viewTimeWrapped(sharedState)
         ]));
     };
     var $author$project$Main$headerView = function(readyModel) {
@@ -11793,63 +11853,6 @@ type alias Process =
         }
     };
     var $rtfeldman$elm_css$Html$Styled$toUnstyled = $rtfeldman$elm_css$VirtualDom$Styled$toUnstyled;
-    var $author$project$Taco$getTime = function(_v0) {
-        var currentTime = _v0.a.currentTime;
-        return currentTime;
-    };
-    var $elm$time$Time$flooredDiv = F2(function(numerator, denominator) {
-        return $elm$core$Basics$floor(numerator / denominator);
-    });
-    var $elm$time$Time$posixToMillis = function(_v0) {
-        var millis = _v0.a;
-        return millis;
-    };
-    var $elm$time$Time$toAdjustedMinutesHelp = F3(function(defaultOffset, posixMinutes, eras) {
-        toAdjustedMinutesHelp: while(true){
-            if (!eras.b) return posixMinutes + defaultOffset;
-            else {
-                var era = eras.a;
-                var olderEras = eras.b;
-                if (_Utils_cmp(era.start, posixMinutes) < 0) return posixMinutes + era.offset;
-                else {
-                    var $temp$defaultOffset = defaultOffset, $temp$posixMinutes = posixMinutes, $temp$eras = olderEras;
-                    defaultOffset = $temp$defaultOffset;
-                    posixMinutes = $temp$posixMinutes;
-                    eras = $temp$eras;
-                    continue toAdjustedMinutesHelp;
-                }
-            }
-        }
-    });
-    var $elm$time$Time$toAdjustedMinutes = F2(function(_v0, time) {
-        var defaultOffset = _v0.a;
-        var eras = _v0.b;
-        return A3($elm$time$Time$toAdjustedMinutesHelp, defaultOffset, A2($elm$time$Time$flooredDiv, $elm$time$Time$posixToMillis(time), 60000), eras);
-    });
-    var $elm$time$Time$toHour = F2(function(zone, time) {
-        return A2($elm$core$Basics$modBy, 24, A2($elm$time$Time$flooredDiv, A2($elm$time$Time$toAdjustedMinutes, zone, time), 60));
-    });
-    var $elm$time$Time$toMinute = F2(function(zone, time) {
-        return A2($elm$core$Basics$modBy, 60, A2($elm$time$Time$toAdjustedMinutes, zone, time));
-    });
-    var $elm$time$Time$toSecond = F2(function(_v0, time) {
-        return A2($elm$core$Basics$modBy, 60, A2($elm$time$Time$flooredDiv, $elm$time$Time$posixToMillis(time), 1000));
-    });
-    var $elm$time$Time$utc = A2($elm$time$Time$Zone, 0, _List_Nil);
-    var $author$project$Main$viewTime = function(_v0) {
-        var sharedState = _v0.sharedState;
-        var time = $author$project$Taco$getTime(sharedState);
-        var second = $elm$core$String$fromInt(A2($elm$time$Time$toSecond, $elm$time$Time$utc, time));
-        var rawSecond = A2($elm$time$Time$toSecond, $elm$time$Time$utc, time);
-        var secondComma = rawSecond > 9 ? ':' : ':0';
-        var rawMinute = A2($elm$time$Time$toMinute, $elm$time$Time$utc, time);
-        var minute = $elm$core$String$fromInt(A2($elm$time$Time$toMinute, $elm$time$Time$utc, time));
-        var hour = $elm$core$String$fromInt(A2($elm$time$Time$toHour, $elm$time$Time$utc, time));
-        var firstComma = rawMinute > 9 ? ':' : ':0';
-        return A2($rtfeldman$elm_css$Html$Styled$div, _List_Nil, _List_fromArray([
-            $rtfeldman$elm_css$Html$Styled$text(_Utils_ap(hour, _Utils_ap(firstComma, _Utils_ap(minute, _Utils_ap(secondComma, second)))))
-        ]));
-    };
     var $author$project$Main$view = function(model) {
         if (model.$ === 'Ready') {
             var readyModel = model.a;
@@ -11875,8 +11878,7 @@ type alias Process =
                                 $author$project$Styled$styledh2(_List_fromArray([
                                     $rtfeldman$elm_css$Html$Styled$text(t('text.thisIsNextPage'))
                                 ])),
-                                A2($author$project$Main$pageView, page, readyModel),
-                                $author$project$Main$viewTime(readyModel)
+                                A2($author$project$Main$pageView, page, readyModel)
                             ])))
                         ]),
                         title: 'Next Page'

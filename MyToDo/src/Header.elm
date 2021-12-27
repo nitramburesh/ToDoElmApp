@@ -1,10 +1,10 @@
 module Header exposing (Msg, navigationHeaderView, update)
 
-import Browser
 import Html.Styled as HtmlStyled
 import Router
 import Styled
 import Taco
+import TimeModule
 import Translations
 
 
@@ -34,14 +34,17 @@ navigationHeaderView sharedState =
             Translations.translators (Taco.getTranslations sharedState)
     in
     Styled.navbarWrapper
-        [ Styled.navbarLinksWrapper[Styled.anchorInternal Router.NextPageRoute
-            [ HtmlStyled.text (t "buttons.nextPage") ]
-        , Styled.anchorInternal
-            Router.ToDoItemRoute
-            [ HtmlStyled.text (t "buttons.home") ]
-        , Styled.anchorExternal (Router.externalRouteToString Router.GoogleRoute)
-            [ HtmlStyled.text (t "buttons.google") ]]
+        [ Styled.navbarLinksWrapper
+            [ Styled.anchorInternal Router.NextPageRoute
+                [ HtmlStyled.text (t "buttons.nextPage") ]
+            , Styled.anchorInternal
+                Router.ToDoItemRoute
+                [ HtmlStyled.text (t "buttons.home") ]
+            , Styled.anchorExternal (Router.externalRouteToString Router.GoogleRoute)
+                [ HtmlStyled.text (t "buttons.google") ]
+            ]
         , translationButtonsView sharedState
+        , TimeModule.viewTimeWrapped sharedState
         ]
 
 
@@ -67,5 +70,3 @@ translationButtonsView sharedState =
                 (ClickedShowLanguageButtons (Taco.getShowingLanguageButtons sharedState))
                 [ HtmlStyled.text (t "buttons.language") ]
             ]
-
-

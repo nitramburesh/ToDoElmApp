@@ -17,7 +17,6 @@ import Time
 import ToDoItems as Items
 import Translations
 import Url
-import Task
 
 
 
@@ -210,18 +209,18 @@ update msg model =
             , Cmd.map NextPageMsg pageCmd
             )
 
-        ( HeaderMsg subMsg, Ready readyModel page) ->
+        ( HeaderMsg subMsg, Ready readyModel page ) ->
             let
                 ( pageCmd, sharedStateMsg ) =
                     Header.update subMsg readyModel.sharedState
-            
-                updatedTaco = 
+
+                updatedTaco =
                     Taco.update sharedStateMsg readyModel.sharedState
 
                 updatedReadyModel =
                     { readyModel | sharedState = updatedTaco }
             in
-            ( Ready updatedReadyModel page , Cmd.map HeaderMsg pageCmd)
+            ( Ready updatedReadyModel page, Cmd.map HeaderMsg pageCmd )
 
         ( Redirect route, Ready readyModel _ ) ->
             ( model, redirect readyModel route )
@@ -245,14 +244,17 @@ update msg model =
                     { readyModel | showingTranslations = not isShowing }
             in
             ( Ready updatedModel page, Cmd.none )
-        (Tick currentTime, Ready readyModel page) ->
-            let 
-                updatedTaco = 
+
+        ( Tick currentTime, Ready readyModel page ) ->
+            let
+                updatedTaco =
                     Taco.updateTime readyModel.sharedState currentTime
+
                 updatedModel =
-                    { readyModel | sharedState = updatedTaco}
+                    { readyModel | sharedState = updatedTaco }
             in
-                ( Ready updatedModel page, Cmd.none)
+            ( Ready updatedModel page, Cmd.none )
+
         _ ->
             ( model
             , Cmd.none
@@ -261,10 +263,13 @@ update msg model =
 
 
 ---- VIEW ----
-headerView :  ReadyModel -> HtmlStyled.Html Msg
-headerView  readyModel = 
+
+
+headerView : ReadyModel -> HtmlStyled.Html Msg
+headerView readyModel =
     Header.navigationHeaderView readyModel.sharedState
         |> HtmlStyled.map HeaderMsg
+
 
 pageView : Page -> ReadyModel -> HtmlStyled.Html Msg
 pageView page { sharedState } =
@@ -280,28 +285,6 @@ pageView page { sharedState } =
         NotFoundPage ->
             NotFoundPage.view
 
-viewTime : ReadyModel -> HtmlStyled.Html Msg
-viewTime {sharedState} =
-    let
-        time = Taco.getTime sharedState
-
-        rawMinute = (Time.toMinute Time.utc time)
-        rawSecond = (Time.toSecond Time.utc time)
-
-        firstComma = 
-            if rawMinute > 9 then ":"
-                    else ":0"
-        secondComma =
-            if rawSecond > 9 then ":"
-                    else ":0"
-
-        hour   = String.fromInt (Time.toHour Time.utc time)
-        minute = String.fromInt (Time.toMinute Time.utc time)
-        second = String.fromInt (Time.toSecond Time.utc time)
-    in 
-        HtmlStyled.div[]
-            [HtmlStyled.text 
-                (hour ++ firstComma ++  minute ++ secondComma ++ second)]
 
 view : Model -> Browser.Document Msg
 view model =
@@ -329,7 +312,6 @@ view model =
                         [ [ headerView readyModel
                           , Styled.styledh2 [ HtmlStyled.text (t "text.thisIsNextPage") ]
                           , pageView page readyModel
-                          , viewTime readyModel
                           ]
                             |> HtmlStyled.div []
                             |> HtmlStyled.toUnstyled
@@ -427,25 +409,6 @@ translationButtonsView { sharedState, showingTranslations } =
 seznamRoute : String
 seznamRoute =
     "https://www.seznam.cz/"
-
-
-toUtcString : Time.Posix -> String
-toUtcString time =
-    String.fromInt (Time.toHour Time.utc time)
-        ++ (if Time.toMinute Time.utc time > 9 then
-                ":"
-
-            else
-                ":0"
-           )
-        ++ String.fromInt (Time.toMinute Time.utc time)
-        ++ (if Time.toSecond Time.utc time > 9 then
-                ":"
-
-            else
-                ":0"
-           )
-        ++ String.fromInt (Time.toSecond Time.utc time)
 
 
 type ExternalRoute

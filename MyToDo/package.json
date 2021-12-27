@@ -14,7 +14,7 @@
     "start": "parcel public/index.html",
     "build": "parcel build/index.html --dist-dir build",
     "elm start": "npx elm-app start",
-    " ": "npx elm-analyse -s -p 50000"
+    "elm analyse": "npx elm-analyse -s -p 50000"
   },
   "dependencies": {
     "elm-live": "^4.0.2"
