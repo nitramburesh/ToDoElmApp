@@ -1,65 +1,58 @@
-module Header exposing (..)
+module Header exposing (Msg, navigationHeaderView, update)
 
 import Browser
-import Browser.Navigation as Nav
 import Html.Styled as HtmlStyled
 import Router
 import Styled
 import Taco
 import Translations
-import Url
-
-
-type alias Model =
-    { showingTranslations : Bool
-    }
-
-
-init : Model
-init =
-    { showingTranslations = False
-    }
 
 
 type Msg
-    = LinkClicked Browser.UrlRequest
-    | UrlChanged Url.Url
-    | Redirect Router.Route
-    | ChangedLanguage Translations.Language
+    = ChangedLanguage Translations.Language
     | ClickedShowLanguageButtons Bool
 
 
+update : Msg -> Taco.Taco -> ( Cmd Msg, Taco.Msg )
+update msg sharedState =
+    case msg of
+        ChangedLanguage translations ->
+            let
+                updatedTranslations =
+                    Translations.changeLanguage translations (Taco.getTranslations sharedState)
+            in
+            ( Cmd.none, Taco.UpdatedTranslations updatedTranslations )
+
+        ClickedShowLanguageButtons bool ->
+            ( Cmd.none, Taco.UpdatedShowingTranslationsButton bool )
 
 
-
-navigationHeaderView : Taco.Taco -> Model -> HtmlStyled.Html Msg
-navigationHeaderView sharedState model =
+navigationHeaderView : Taco.Taco -> HtmlStyled.Html Msg
+navigationHeaderView sharedState =
     let
         { t } =
             Translations.translators (Taco.getTranslations sharedState)
     in
     Styled.navbarWrapper
-        [ Styled.btn Styled.Basic
-            (Redirect Router.NextPageRoute)
+        [ Styled.navbarLinksWrapper[Styled.anchorInternal Router.NextPageRoute
             [ HtmlStyled.text (t "buttons.nextPage") ]
-        , Styled.btn Styled.Basic
-            (Redirect Router.ToDoItemRoute)
+        , Styled.anchorInternal
+            Router.ToDoItemRoute
             [ HtmlStyled.text (t "buttons.home") ]
-        , Styled.btn Styled.Basic
-            (LinkClicked (toExternalRoute GoogleRoute))
-            [ HtmlStyled.text (t "buttons.google") ]
-        , translationButtonsView sharedState model
+        , Styled.anchorExternal (Router.externalRouteToString Router.GoogleRoute)
+            [ HtmlStyled.text (t "buttons.google") ]]
+        , translationButtonsView sharedState
         ]
 
 
-translationButtonsView : Taco.Taco -> Model -> HtmlStyled.Html Msg
-translationButtonsView sharedState { showingTranslations } =
+translationButtonsView : Taco.Taco -> HtmlStyled.Html Msg
+translationButtonsView sharedState =
     let
         { t } =
             Translations.translators (Taco.getTranslations sharedState)
     in
-    if showingTranslations then
-        Styled.centeredWrapper
+    if Taco.getShowingLanguageButtons sharedState then
+        Styled.changeLanguageButtons
             [ Styled.btn Styled.GreySquare
                 (ChangedLanguage Translations.En)
                 [ HtmlStyled.text (t "buttons.english") ]
@@ -69,40 +62,10 @@ translationButtonsView sharedState { showingTranslations } =
             ]
 
     else
-        Styled.centeredWrapper
+        Styled.changeLanguageButtons
             [ Styled.btn Styled.Blue
-                (ClickedShowLanguageButtons showingTranslations)
+                (ClickedShowLanguageButtons (Taco.getShowingLanguageButtons sharedState))
                 [ HtmlStyled.text (t "buttons.language") ]
             ]
 
 
-type ExternalRoute
-    = SeznamRoute
-    | YoutubeRoute
-    | GoogleRoute
-    | RedditRoute
-
-
-externalRouteToString : ExternalRoute -> String
-externalRouteToString route =
-    case route of
-        SeznamRoute ->
-            "https://www.seznam.cz/"
-
-        YoutubeRoute ->
-            "https://www.youtube.com/"
-
-        GoogleRoute ->
-            "https://www.google.com/"
-
-        RedditRoute ->
-            "https://www.reddit.com/"
-
-
-toExternalRoute : ExternalRoute -> Browser.UrlRequest
-toExternalRoute externalRoute =
-    let
-        route =
-            externalRouteToString externalRoute
-    in
-    Browser.External route

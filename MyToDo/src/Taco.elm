@@ -1,4 +1,4 @@
-module Taco exposing (Msg(..), Taco, getApi, getKey, getTranslations, init, update, updateApi, updateTranslations)
+module Taco exposing (Msg(..), Taco, getApi, getKey, getShowingLanguageButtons, getTranslations, init, update, updateApi, updateLanguageButtons, updateTranslations, updateTime, getTime)
 
 import Api
 import Browser.Navigation as Nav
@@ -14,6 +14,8 @@ type alias TacoPayload =
     { translations : Translations.Model
     , api : Api.Api
     , key : Nav.Key
+    , showingLanguageButtons : Bool
+    , currentTime : Time.Posix
     }
 
 
@@ -22,6 +24,8 @@ type Msg
     | SetAccessToken String
     | UpdatedTranslations Translations.Model
     | UpdatedApi Api.Api
+    | UpdatedShowingTranslationsButton Bool
+    | UpdatedTime Time.Posix
 
 
 
@@ -47,18 +51,30 @@ update msg (Taco sharedStatePayload) =
         UpdatedTranslations translations ->
             let
                 updatedTacoPayload =
-                    { sharedStatePayload | translations = translations }
-            in
-            Taco updatedTacoPayload 
-
-        UpdatedApi api -> 
-            let
-                updatedTacoPayload =
-                    {sharedStatePayload | api = api}
+                    { sharedStatePayload | translations = translations, showingLanguageButtons = not (getShowingLanguageButtons (Taco sharedStatePayload)) }
             in
             Taco updatedTacoPayload
 
+        UpdatedApi api ->
+            let
+                updatedTacoPayload =
+                    { sharedStatePayload | api = api }
+            in
+            Taco updatedTacoPayload
 
+        UpdatedShowingTranslationsButton showingLanguageButtons ->
+            let
+                updatedTacoPayload =
+                    {sharedStatePayload | showingLanguageButtons = not showingLanguageButtons}
+            in    
+                Taco updatedTacoPayload
+
+        UpdatedTime currentTime ->
+            let 
+                updatedTacoPayload = 
+                    {sharedStatePayload | currentTime = currentTime}
+            in
+                Taco updatedTacoPayload
 getKey : Taco -> Nav.Key
 getKey (Taco { key }) =
     key
@@ -74,22 +90,30 @@ getTranslations (Taco { translations }) =
     translations
 
 
-init : Translations.Model -> Api.Api -> Nav.Key -> Taco
-init translations api key =
+getShowingLanguageButtons : Taco -> Bool
+getShowingLanguageButtons (Taco { showingLanguageButtons }) =
+    showingLanguageButtons
+
+
+init : Translations.Model -> Api.Api -> Nav.Key -> Time.Posix -> Taco
+init translations api key currentTime =
     Taco
         { translations = translations
         , api = api
         , key = key
+        , showingLanguageButtons = False
+        , currentTime = currentTime
         }
 
 
 
--- getTime : Taco -> Time.Posix
--- getTime (Taco { currentTime }) =
---     currentTime
--- updateTime : Taco -> Time.Posix -> Taco
--- updateTime (Taco sharedState) time =
---     Taco { sharedState | currentTime = time }
+getTime : Taco -> Time.Posix
+getTime (Taco { currentTime }) =
+    currentTime
+
+updateTime : Taco -> Time.Posix -> Taco
+updateTime (Taco sharedState) time =
+    Taco { sharedState | currentTime = time }
 
 
 updateTranslations : Taco -> Translations.Model -> Taco
@@ -100,3 +124,8 @@ updateTranslations (Taco sharedState) translations =
 updateApi : Taco -> Api.Api -> Taco
 updateApi (Taco sharedState) api =
     Taco { sharedState | api = api }
+
+
+updateLanguageButtons : Taco -> Bool -> Taco
+updateLanguageButtons (Taco sharedState) showingLanguageButtons =
+    Taco { sharedState | showingLanguageButtons = showingLanguageButtons }

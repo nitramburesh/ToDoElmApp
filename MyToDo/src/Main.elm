@@ -17,6 +17,7 @@ import Time
 import ToDoItems as Items
 import Translations
 import Url
+import Task
 
 
 
@@ -60,11 +61,13 @@ type Page
 type Msg
     = ToDoItemPageMsg ToDoItemPage.Msg
     | NextPageMsg ToDoItemPage.Msg
+    | HeaderMsg Header.Msg
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
     | Redirect Router.Route
     | ChangedLanguage Translations.Language
     | ClickedShowLanguageButtons Bool
+    | Tick Time.Posix
 
 
 init : RawFlags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -77,7 +80,7 @@ init rawFlags url key =
 
                 readyModel =
                     { flags = flags
-                    , sharedState = Taco.init flags.translations api key
+                    , sharedState = Taco.init flags.translations api key (Time.millisToPosix 0)
                     , showingTranslations = False
                     }
 
@@ -207,6 +210,19 @@ update msg model =
             , Cmd.map NextPageMsg pageCmd
             )
 
+        ( HeaderMsg subMsg, Ready readyModel page) ->
+            let
+                ( pageCmd, sharedStateMsg ) =
+                    Header.update subMsg readyModel.sharedState
+            
+                updatedTaco = 
+                    Taco.update sharedStateMsg readyModel.sharedState
+
+                updatedReadyModel =
+                    { readyModel | sharedState = updatedTaco }
+            in
+            ( Ready updatedReadyModel page , Cmd.map HeaderMsg pageCmd)
+
         ( Redirect route, Ready readyModel _ ) ->
             ( model, redirect readyModel route )
 
@@ -229,7 +245,14 @@ update msg model =
                     { readyModel | showingTranslations = not isShowing }
             in
             ( Ready updatedModel page, Cmd.none )
-
+        (Tick currentTime, Ready readyModel page) ->
+            let 
+                updatedTaco = 
+                    Taco.updateTime readyModel.sharedState currentTime
+                updatedModel =
+                    { readyModel | sharedState = updatedTaco}
+            in
+                ( Ready updatedModel page, Cmd.none)
         _ ->
             ( model
             , Cmd.none
@@ -238,7 +261,10 @@ update msg model =
 
 
 ---- VIEW ----
-
+headerView :  ReadyModel -> HtmlStyled.Html Msg
+headerView  readyModel = 
+    Header.navigationHeaderView readyModel.sharedState
+        |> HtmlStyled.map HeaderMsg
 
 pageView : Page -> ReadyModel -> HtmlStyled.Html Msg
 pageView page { sharedState } =
@@ -254,6 +280,28 @@ pageView page { sharedState } =
         NotFoundPage ->
             NotFoundPage.view
 
+viewTime : ReadyModel -> HtmlStyled.Html Msg
+viewTime {sharedState} =
+    let
+        time = Taco.getTime sharedState
+
+        rawMinute = (Time.toMinute Time.utc time)
+        rawSecond = (Time.toSecond Time.utc time)
+
+        firstComma = 
+            if rawMinute > 9 then ":"
+                    else ":0"
+        secondComma =
+            if rawSecond > 9 then ":"
+                    else ":0"
+
+        hour   = String.fromInt (Time.toHour Time.utc time)
+        minute = String.fromInt (Time.toMinute Time.utc time)
+        second = String.fromInt (Time.toSecond Time.utc time)
+    in 
+        HtmlStyled.div[]
+            [HtmlStyled.text 
+                (hour ++ firstComma ++  minute ++ secondComma ++ second)]
 
 view : Model -> Browser.Document Msg
 view model =
@@ -263,7 +311,7 @@ view model =
                 ToDoItemPage _ ->
                     { title = "ToDoItem Page"
                     , body =
-                        [ [ navigationHeaderView readyModel
+                        [ [ headerView readyModel
                           , pageView page readyModel
                           ]
                             |> HtmlStyled.div []
@@ -278,11 +326,12 @@ view model =
                     in
                     { title = "Next Page"
                     , body =
-                        [ [ navigationHeaderView readyModel
+                        [ [ headerView readyModel
                           , Styled.styledh2 [ HtmlStyled.text (t "text.thisIsNextPage") ]
                           , pageView page readyModel
+                          , viewTime readyModel
                           ]
-                            |> Styled.centeredMe
+                            |> HtmlStyled.div []
                             |> HtmlStyled.toUnstyled
                         ]
                     }
@@ -408,7 +457,7 @@ type ExternalRoute
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.none
+    Time.every 1000 Tick
 
 
 

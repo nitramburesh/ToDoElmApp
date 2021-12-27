@@ -1,4 +1,4 @@
-module Styled exposing (ButtonVariant(..), bodyWrapper, btn, centeredMe, centeredWrapper, checkbox, externalLink, internalLink, itemDiv, itemsWrapper, navbarWrapper, styledInput, styledText, styledh1, styledh2, textDiv, timeWrapper, wrapper)
+module Styled exposing (ButtonVariant(..), anchorExternal, anchorInternal, bodyWrapper, btn, navbarLinksWrapper, centeredWrapper, checkbox, externalLink, internalLink, itemDiv, itemsWrapper, navbarWrapper, styledInput, styledText, styledh1, styledh2, textDiv, timeWrapper, wrapper, changeLanguageButtons)
 
 import Css exposing (..)
 import Css.Transitions as Transitions
@@ -16,85 +16,54 @@ type ButtonVariant
     | GreySquare
 
 
-btn : ButtonVariant -> msg -> List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
-btn variant msg =
-    let
-        styles =
-            [ borderStyle none
-            , color theme.white
-            , padding (rem 1)
-            , textTransform uppercase
-            , fontFamilies [ "Courier New" ]
-            , fontSize (rem 1.5)
-            , cursor pointer
-            ]
 
-        variantStyles =
-            case variant of
-                RedSquare ->
-                    [ backgroundColor theme.redOrange
-                    , margin (rem 0.5)
-                    , hover
-                        [ backgroundColor theme.red
-                        ]
-                    , Transitions.transition
-                        [ Transitions.backgroundColor 300
-                        , Transitions.transform3 120 1000 Transitions.easeInOut
-                        ]
-                    ]
+--- BASE STYLES ---
 
-                GreySquare ->
-                    [ backgroundColor theme.gray
-                    , margin (rem 0.5)
-                    , hover
-                        [ backgroundColor theme.grayer
-                        ]
-                    , Transitions.transition
-                        [ Transitions.backgroundColor 300
-                        , Transitions.transform3 120 1000 Transitions.easeInOut
-                        ]
-                    ]
 
-                BlueSquare ->
-                    [ backgroundColor theme.blue
-                    , margin (rem 0.5)
-                    , hover
-                        [ backgroundColor theme.navyBlue
-                        ]
-                    , Transitions.transition
-                        [ Transitions.backgroundColor 300
-                        , Transitions.transform3 120 1000 Transitions.easeInOut
-                        ]
-                    ]
-
-                Blue ->
-                    [ backgroundColor theme.blue
-                    , margin (rem 0.5)
-                    , borderRadius (rem 1.5)
-                    , hover
-                        [ backgroundColor theme.navyBlue
-                        ]
-                    , Transitions.transition
-                        [ Transitions.backgroundColor 300
-                        , Transitions.transform3 120 1000 Transitions.easeInOut
-                        ]
-                    ]
-
-                Basic ->
-                    [ backgroundColor theme.black
-                    , hover
-                        [ fontSize (rem 2.5)
-                        ]
-                    , Transitions.transition
-                        [ Transitions.fontSize 300
-                        , Transitions.transform3 120 1000 Transitions.easeInOut
-                        ]
-                    ]
-    in
-    HtmlStyled.button
-        [ Attributes.css <| styles ++ variantStyles
-        , Events.onClick msg
+styledAnchor : List Style
+styledAnchor =
+    [ borderStyle none
+    , color theme.white
+    , textTransform uppercase
+    , textDecoration overline
+    , fontFamilies [ "Courier New" ]
+    , fontSize (rem 1.5)
+    , cursor pointer
+    , backgroundColor theme.black
+    , hover
+        [ fontSize (rem 2.2)
+        , textDecoration none
         ]
+    , Transitions.transition
+        [ Transitions.fontSize 300
+        , Transitions.transform3 1000 1000 Transitions.easeInOut
+        ]
+    ]
+
+
+styledSquareButton : List Style
+styledSquareButton =
+    []
+
+
+colorTransition : Style
+colorTransition =
+    Transitions.transition
+        [ Transitions.backgroundColor 300
+        , Transitions.transform3 120 1000 Transitions.easeInOut
+        ]
+
+
+fontTransition : Style
+fontTransition =
+    Transitions.transition
+        [ Transitions.fontSize 300
+        , Transitions.transform3 120 1000 Transitions.easeInOut
+        ]
+
+
+
+--- COLORS ---
 
 
 theme : { black : Color, white : Color, itemsWrapperColor : Color, blue : Color, navyBlue : Color, red : Color, darkShadow : Color, gray : Color, redOrange : Color, grayer : Color, lightShadow : Color }
@@ -111,6 +80,91 @@ theme =
     , grayer = hex "#495057"
     , gray = hex "#868B8E"
     }
+
+
+
+--- STYLES ---
+
+
+btn : ButtonVariant -> msg -> List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
+btn variant msg =
+    let
+        styles =
+            [ borderStyle none
+            , color theme.white
+            , padding (rem 1)
+            , textTransform uppercase
+            , fontFamilies [ "Courier New" ]
+            , fontSize (rem 1.5)
+            , cursor pointer
+            , margin (rem 1)
+            ]
+
+        variantStyles =
+            case variant of
+                RedSquare ->
+                    [ backgroundColor theme.redOrange
+                    , hover
+                        [ backgroundColor theme.red
+                        ]
+                    , colorTransition
+                    ]
+
+                GreySquare ->
+                    [ backgroundColor theme.gray
+                    , hover
+                        [ backgroundColor theme.grayer
+                        ]
+                    , colorTransition
+                    ]
+
+                BlueSquare ->
+                    [ backgroundColor theme.blue
+                    , hover
+                        [ backgroundColor theme.navyBlue
+                        ]
+                    , colorTransition
+                    ]
+
+                Blue ->
+                    [ backgroundColor theme.blue
+                    , borderRadius (rem 1.5)
+                    , hover
+                        [ backgroundColor theme.navyBlue
+                        ]
+                    , colorTransition
+                    ]
+
+                Basic ->
+                    [ backgroundColor theme.black
+                    , hover
+                        [ fontSize (rem 2.5)
+                        ]
+                    , fontTransition
+                    ]
+    in
+    HtmlStyled.button
+        [ Attributes.css <| styles ++ variantStyles
+        , Events.onClick msg
+        ]
+
+
+anchorInternal : Router.Route -> List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
+anchorInternal route =
+    HtmlStyled.a
+        [ Attributes.css
+            styledAnchor
+        , Router.href route
+        ]
+
+
+anchorExternal : String -> List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
+anchorExternal route =
+    HtmlStyled.a
+        [ Attributes.css
+            styledAnchor
+        , Attributes.href route
+        ]
 
 
 itemDiv : List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
@@ -202,6 +256,7 @@ styledInput msg placeholder =
             , textAlign center
             , fontSize (rem 1)
             , fontFamilies [ "Courier New" ]
+            
             ]
         , Events.onInput msg
         , Attributes.placeholder placeholder
@@ -288,10 +343,10 @@ navbarWrapper =
     HtmlStyled.div
         [ Attributes.css
             [ displayFlex
-            , justifyContent spaceAround
+            , justifyContent spaceBetween
             , alignItems center
             , marginBottom (rem 2)
-            , padding (rem 2)
+            , padding (rem 1)
             , backgroundColor theme.black
             , boxShadow4 (rem 0) (rem 0.1) (rem 4) theme.darkShadow
             ]
@@ -303,17 +358,32 @@ centeredWrapper =
     HtmlStyled.div
         [ Attributes.css
             [ displayFlex
+            , flexDirection column            
             , justifyContent center
             , alignItems center
             ]
         ]
 
 
-centeredMe : List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
-centeredMe =
+navbarLinksWrapper : List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
+navbarLinksWrapper =
     HtmlStyled.div
         [ Attributes.css
             [ displayFlex
-            , flexDirection column
+             , justifyContent spaceAround
+            , flexDirection row
+            , height (rem 2)
+            , width (pct 80)
+            ]
+        ]
+
+changeLanguageButtons : List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
+changeLanguageButtons =
+    HtmlStyled.div
+        [ Attributes.css
+            [ displayFlex
+             , justifyContent center
+            , flexDirection row
+            , width (pct 20)
             ]
         ]
