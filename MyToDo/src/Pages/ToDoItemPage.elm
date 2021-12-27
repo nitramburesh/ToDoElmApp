@@ -6,7 +6,6 @@ import Html.Styled.Attributes as Attributes
 import RemoteData
 import Styled
 import Taco
-import TimeModule
 import ToDoItems as Items
 import Translations
 
@@ -179,7 +178,7 @@ view (ModelInternal modelInternalPayload) sharedState =
     HtmlStyled.div []
         [ Styled.centeredWrapper
             [ Styled.styledh1 [ HtmlStyled.text (t "text.welcomeHeading") ]
-            , HtmlStyled.img [ Attributes.src "/logo.png" ] []
+            , Styled.heroLogo "/logo.png" []
             , setAccessTokenView sharedState
             ]
         , Styled.btn Styled.RedSquare ToggledToDoList [ HtmlStyled.text (buttonTitle modelInternalPayload sharedState) ]

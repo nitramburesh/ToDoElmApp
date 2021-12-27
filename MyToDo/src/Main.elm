@@ -390,10 +390,10 @@ translationButtonsView { sharedState, showingTranslations } =
     in
     if showingTranslations then
         Styled.centeredWrapper
-            [ Styled.btn Styled.GreySquare
+            [ Styled.btn Styled.Grey
                 (ChangedLanguage Translations.En)
                 [ HtmlStyled.text (t "buttons.english") ]
-            , Styled.btn Styled.GreySquare
+            , Styled.btn Styled.Grey
                 (ChangedLanguage Translations.Ru)
                 [ HtmlStyled.text (t "buttons.russian") ]
             ]

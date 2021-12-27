@@ -1,4 +1,4 @@
-module Styled exposing (ButtonVariant(..), anchorExternal, anchorInternal, bodyWrapper, btn, navbarLinksWrapper, centeredWrapper, checkbox, externalLink, internalLink, itemDiv, itemsWrapper, navbarWrapper, styledInput, styledText, styledh1, styledh2, textDiv, timeWrapper, wrapper, changeLanguageButtons)
+module Styled exposing (ButtonVariant(..), anchorExternal, anchorInternal, bodyWrapper, btn, centeredWrapper, changeLanguageButtonsWrapper, checkbox, externalLink, heroLogo, internalLink, itemDiv, itemsWrapper, navbarLinksWrapper, navbarWrapper, styledInput, styledText, styledh1, styledh2, textDiv, timeWrapper, wrapper)
 
 import Css exposing (..)
 import Css.Transitions as Transitions
@@ -13,7 +13,7 @@ type ButtonVariant
     | Basic
     | RedSquare
     | BlueSquare
-    | GreySquare
+    | Grey
 
 
 
@@ -39,11 +39,6 @@ styledAnchor =
         , Transitions.transform3 1000 1000 Transitions.easeInOut
         ]
     ]
-
-
-styledSquareButton : List Style
-styledSquareButton =
-    []
 
 
 colorTransition : Style
@@ -110,7 +105,7 @@ btn variant msg =
                     , colorTransition
                     ]
 
-                GreySquare ->
+                Grey ->
                     [ backgroundColor theme.gray
                     , hover
                         [ backgroundColor theme.grayer
@@ -146,6 +141,17 @@ btn variant msg =
     HtmlStyled.button
         [ Attributes.css <| styles ++ variantStyles
         , Events.onClick msg
+        ]
+
+
+heroLogo : String -> List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
+heroLogo imgSource =
+    HtmlStyled.img
+        [ Attributes.src imgSource
+        , Attributes.css
+            [ width (rem 20)
+            , margin (rem 0)
+            ]
         ]
 
 
@@ -217,6 +223,8 @@ styledh1 =
             , textTransform uppercase
             , fontSize (rem 4)
             , letterSpacing (rem 0.2)
+            , marginTop (rem 3)
+            , marginBottom (rem 0)
             ]
         ]
 
@@ -249,14 +257,13 @@ styledInput : (String -> msg) -> String -> List (HtmlStyled.Html msg) -> HtmlSty
 styledInput msg placeholder =
     HtmlStyled.input
         [ Attributes.css
-            [ marginBottom (rem 3)
+            [ margin2 (rem 1.5) (rem 0)
             , width (rem 30)
             , height (rem 2)
             , borderRadius (rem 2)
             , textAlign center
             , fontSize (rem 1)
             , fontFamilies [ "Courier New" ]
-            
             ]
         , Events.onInput msg
         , Attributes.placeholder placeholder
@@ -333,7 +340,12 @@ timeWrapper =
             [ displayFlex
             , flexDirection column
             , justifyContent center
-            , color theme.white
+            , margin2 (rem 0) (rem 2)
+            , color theme.black
+            , backgroundColor theme.white
+            , padding2 (rem 1) (rem 1)
+            , borderRadius (rem 2)
+            , boxShadow6 inset (rem 0) (rem 0) (rem 0.4) (rem 0.3) theme.lightShadow
             ]
         ]
 
@@ -358,7 +370,7 @@ centeredWrapper =
     HtmlStyled.div
         [ Attributes.css
             [ displayFlex
-            , flexDirection column            
+            , flexDirection column
             , justifyContent center
             , alignItems center
             ]
@@ -370,20 +382,21 @@ navbarLinksWrapper =
     HtmlStyled.div
         [ Attributes.css
             [ displayFlex
-             , justifyContent spaceAround
+            , justifyContent spaceAround
             , flexDirection row
             , height (rem 2)
-            , width (pct 80)
+            , width (pct 65)
             ]
         ]
 
-changeLanguageButtons : List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
-changeLanguageButtons =
+
+changeLanguageButtonsWrapper : List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
+changeLanguageButtonsWrapper =
     HtmlStyled.div
         [ Attributes.css
             [ displayFlex
-             , justifyContent center
+            , justifyContent center
             , flexDirection row
-            , width (pct 20)
+            , width (pct 25)
             ]
         ]

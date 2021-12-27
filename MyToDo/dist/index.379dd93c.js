@@ -10981,7 +10981,7 @@ type alias Process =
             $rtfeldman$elm_css$Css$justifyContent($rtfeldman$elm_css$Css$spaceAround),
             $rtfeldman$elm_css$Css$flexDirection($rtfeldman$elm_css$Css$row),
             $rtfeldman$elm_css$Css$height($rtfeldman$elm_css$Css$rem(2)),
-            $rtfeldman$elm_css$Css$width($rtfeldman$elm_css$Css$pct(80))
+            $rtfeldman$elm_css$Css$width($rtfeldman$elm_css$Css$pct(65))
         ]))
     ]));
     var $rtfeldman$elm_css$Css$alignItems = function(fn) {
@@ -11015,9 +11015,6 @@ type alias Process =
         return $rtfeldman$elm_css$VirtualDom$Styled$Unstyled($elm$virtual_dom$VirtualDom$text(str));
     };
     var $rtfeldman$elm_css$Html$Styled$text = $rtfeldman$elm_css$VirtualDom$Styled$text;
-    var $author$project$Styled$Blue = {
-        $: 'Blue'
-    };
     var $author$project$Header$ChangedLanguage = function(a) {
         return {
             $: 'ChangedLanguage',
@@ -11030,8 +11027,8 @@ type alias Process =
             a: a
         };
     };
-    var $author$project$Styled$GreySquare = {
-        $: 'GreySquare'
+    var $author$project$Styled$Grey = {
+        $: 'Grey'
     };
     var $author$project$Translations$Ru = {
         $: 'Ru'
@@ -11071,9 +11068,10 @@ type alias Process =
                         ])),
                         $author$project$Styled$colorTransition
                     ]);
-                case 'GreySquare':
+                case 'Grey':
                     return _List_fromArray([
                         $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.gray),
+                        $rtfeldman$elm_css$Css$borderRadius($rtfeldman$elm_css$Css$rem(1)),
                         $rtfeldman$elm_css$Css$hover(_List_fromArray([
                             $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.grayer)
                         ])),
@@ -11123,12 +11121,12 @@ type alias Process =
             $rtfeldman$elm_css$Html$Styled$Events$onClick(msg)
         ]));
     });
-    var $author$project$Styled$changeLanguageButtons = $rtfeldman$elm_css$Html$Styled$div(_List_fromArray([
+    var $author$project$Styled$changeLanguageButtonsWrapper = $rtfeldman$elm_css$Html$Styled$div(_List_fromArray([
         $rtfeldman$elm_css$Html$Styled$Attributes$css(_List_fromArray([
             $rtfeldman$elm_css$Css$displayFlex,
             $rtfeldman$elm_css$Css$justifyContent($rtfeldman$elm_css$Css$center),
             $rtfeldman$elm_css$Css$flexDirection($rtfeldman$elm_css$Css$row),
-            $rtfeldman$elm_css$Css$width($rtfeldman$elm_css$Css$pct(20))
+            $rtfeldman$elm_css$Css$width($rtfeldman$elm_css$Css$pct(25))
         ]))
     ]));
     var $ChristophP$elm_i18next$I18Next$Curly = {
@@ -11187,19 +11185,43 @@ type alias Process =
     var $author$project$Header$translationButtonsView = function(sharedState) {
         var _v0 = $author$project$Translations$translators($author$project$Taco$getTranslations(sharedState));
         var t = _v0.t;
-        return $author$project$Taco$getShowingLanguageButtons(sharedState) ? $author$project$Styled$changeLanguageButtons(_List_fromArray([
-            A3($author$project$Styled$btn, $author$project$Styled$GreySquare, $author$project$Header$ChangedLanguage($author$project$Translations$En), _List_fromArray([
+        return $author$project$Taco$getShowingLanguageButtons(sharedState) ? $author$project$Styled$changeLanguageButtonsWrapper(_List_fromArray([
+            A3($author$project$Styled$btn, $author$project$Styled$Grey, $author$project$Header$ChangedLanguage($author$project$Translations$En), _List_fromArray([
                 $rtfeldman$elm_css$Html$Styled$text(t('buttons.english'))
             ])),
-            A3($author$project$Styled$btn, $author$project$Styled$GreySquare, $author$project$Header$ChangedLanguage($author$project$Translations$Ru), _List_fromArray([
+            A3($author$project$Styled$btn, $author$project$Styled$Grey, $author$project$Header$ChangedLanguage($author$project$Translations$Ru), _List_fromArray([
                 $rtfeldman$elm_css$Html$Styled$text(t('buttons.russian'))
             ]))
-        ])) : $author$project$Styled$changeLanguageButtons(_List_fromArray([
-            A3($author$project$Styled$btn, $author$project$Styled$Blue, $author$project$Header$ClickedShowLanguageButtons($author$project$Taco$getShowingLanguageButtons(sharedState)), _List_fromArray([
+        ])) : $author$project$Styled$changeLanguageButtonsWrapper(_List_fromArray([
+            A3($author$project$Styled$btn, $author$project$Styled$Grey, $author$project$Header$ClickedShowLanguageButtons($author$project$Taco$getShowingLanguageButtons(sharedState)), _List_fromArray([
                 $rtfeldman$elm_css$Html$Styled$text(t('buttons.language'))
             ]))
         ]));
     };
+    var $rtfeldman$elm_css$Css$column = _Utils_update($rtfeldman$elm_css$Css$row, {
+        value: 'column'
+    });
+    var $rtfeldman$elm_css$Css$prop2 = F3(function(key, argA, argB) {
+        return A2($rtfeldman$elm_css$Css$property, key, A2($elm$core$String$join, ' ', _List_fromArray([
+            argA.value,
+            argB.value
+        ])));
+    });
+    var $rtfeldman$elm_css$Css$margin2 = $rtfeldman$elm_css$Css$prop2('margin');
+    var $rtfeldman$elm_css$Css$padding2 = $rtfeldman$elm_css$Css$prop2('padding');
+    var $author$project$Styled$timeWrapper = $rtfeldman$elm_css$Html$Styled$div(_List_fromArray([
+        $rtfeldman$elm_css$Html$Styled$Attributes$css(_List_fromArray([
+            $rtfeldman$elm_css$Css$displayFlex,
+            $rtfeldman$elm_css$Css$flexDirection($rtfeldman$elm_css$Css$column),
+            $rtfeldman$elm_css$Css$justifyContent($rtfeldman$elm_css$Css$center),
+            A2($rtfeldman$elm_css$Css$margin2, $rtfeldman$elm_css$Css$rem(0), $rtfeldman$elm_css$Css$rem(2)),
+            $rtfeldman$elm_css$Css$color($author$project$Styled$theme.black),
+            $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.white),
+            A2($rtfeldman$elm_css$Css$padding2, $rtfeldman$elm_css$Css$rem(1), $rtfeldman$elm_css$Css$rem(1)),
+            $rtfeldman$elm_css$Css$borderRadius($rtfeldman$elm_css$Css$rem(2)),
+            A4($rtfeldman$elm_css$Css$boxShadow4, $rtfeldman$elm_css$Css$rem(0.3), $rtfeldman$elm_css$Css$rem(0.3), $rtfeldman$elm_css$Css$rem(0), $author$project$Styled$theme.gray)
+        ]))
+    ]));
     var $author$project$Taco$getTime = function(_v0) {
         var currentTime = _v0.a.currentTime;
         return currentTime;
@@ -11256,7 +11278,7 @@ type alias Process =
     };
     var $author$project$TimeModule$viewTimeWrapped = function(sharedState) {
         var time = $author$project$TimeModule$viewTimeAsString(sharedState);
-        return A2($rtfeldman$elm_css$Html$Styled$div, _List_Nil, _List_fromArray([
+        return $author$project$Styled$timeWrapper(_List_fromArray([
             $rtfeldman$elm_css$Html$Styled$text(time)
         ]));
     };
@@ -11308,9 +11330,6 @@ type alias Process =
         var _v1 = $author$project$Translations$translators($author$project$Taco$getTranslations(sharedState));
         var t = _v1.t;
         return showingItems ? t('buttons.hideList') : t('buttons.showList');
-    });
-    var $rtfeldman$elm_css$Css$column = _Utils_update($rtfeldman$elm_css$Css$row, {
-        value: 'column'
     });
     var $author$project$Styled$centeredWrapper = $rtfeldman$elm_css$Html$Styled$div(_List_fromArray([
         $rtfeldman$elm_css$Html$Styled$Attributes$css(_List_fromArray([

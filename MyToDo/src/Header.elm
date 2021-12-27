@@ -55,18 +55,18 @@ translationButtonsView sharedState =
             Translations.translators (Taco.getTranslations sharedState)
     in
     if Taco.getShowingLanguageButtons sharedState then
-        Styled.changeLanguageButtons
-            [ Styled.btn Styled.GreySquare
+        Styled.changeLanguageButtonsWrapper
+            [ Styled.btn Styled.Grey
                 (ChangedLanguage Translations.En)
                 [ HtmlStyled.text (t "buttons.english") ]
-            , Styled.btn Styled.GreySquare
+            , Styled.btn Styled.Grey
                 (ChangedLanguage Translations.Ru)
                 [ HtmlStyled.text (t "buttons.russian") ]
             ]
 
     else
-        Styled.changeLanguageButtons
-            [ Styled.btn Styled.Blue
+        Styled.changeLanguageButtonsWrapper
+            [ Styled.btn Styled.Grey
                 (ClickedShowLanguageButtons (Taco.getShowingLanguageButtons sharedState))
                 [ HtmlStyled.text (t "buttons.language") ]
             ]
