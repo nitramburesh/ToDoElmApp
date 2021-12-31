@@ -5,7 +5,7 @@
     "google": "google",
     "showList": "show list",
     "hideList": "Hide List",
-    "initialState": "initial state",
+    "loadItems": "load items",
     "english" : "english",
     "russian" : "russian",
     "language" : "language"
@@ -19,6 +19,7 @@
   },
   "placeholders": {
     "searchItems": "search items...",
-    "insertToken": "insert your token..."
+    "insertToken": "insert your token...",
+    "addItem": "add item..."
   }
 }

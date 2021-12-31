@@ -1,4 +1,4 @@
-module Header exposing (Msg, navigationHeaderView, update)
+module Header exposing (Msg, update, view)
 
 import Html.Styled as HtmlStyled
 import Router
@@ -6,6 +6,10 @@ import Styled
 import Taco
 import TimeModule
 import Translations
+
+
+
+--- UPDATE ---
 
 
 type Msg
@@ -27,8 +31,12 @@ update msg sharedState =
             ( Cmd.none, Taco.UpdatedShowingTranslationsButton bool )
 
 
-navigationHeaderView : Taco.Taco -> HtmlStyled.Html Msg
-navigationHeaderView sharedState =
+
+--- VIEW ---
+
+
+view : Taco.Taco -> HtmlStyled.Html Msg
+view sharedState =
     let
         { t } =
             Translations.translators (Taco.getTranslations sharedState)

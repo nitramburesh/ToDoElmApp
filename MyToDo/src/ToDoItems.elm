@@ -1,4 +1,4 @@
-port module ToDoItems exposing (ToDoItem, decodeToDoItem, decodeToDoItems, encodeToDoItems, filterItems, initialToDoItems, storeItems)
+port module ToDoItems exposing (ToDoItem, decodeToDoItem, decodeToDoItems, encodeToDoItems, filterItems, initialToDoItems, storeItems, toggleDeleteButton)
 
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Pipeline
@@ -12,6 +12,7 @@ type alias ToDoItem =
     { id : Int
     , title : String
     , completed : Bool
+    , showingDeleteButton : Bool
     }
 
 
@@ -26,6 +27,7 @@ decodeToDoItem =
         |> Pipeline.required "id" Decode.int
         |> Pipeline.required "title" Decode.string
         |> Pipeline.required "completed" Decode.bool
+        |> Pipeline.hardcoded False
 
 
 decodeToDoItems : Decode.Decoder (List ToDoItem)
@@ -52,3 +54,8 @@ encodeToDoItems =
 filterItems : String -> List ToDoItem -> List ToDoItem
 filterItems textInput =
     List.filter (\item -> String.contains (String.toLower textInput) (String.toLower item.title))
+
+
+toggleDeleteButton : ToDoItem -> ToDoItem
+toggleDeleteButton item =
+    { item | showingDeleteButton = not item.showingDeleteButton }

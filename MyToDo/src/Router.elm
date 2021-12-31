@@ -1,10 +1,12 @@
-module Router exposing (Route(..), ExternalRoute(..), href, parseUrl, routeToString, externalRouteToString, toExternalRoute)
+module Router exposing (ExternalRoute(..), Route(..), externalRouteToString, href, parseUrl, redirect, routeToString, toExternalRoute)
 
+import Browser
+import Browser.Navigation as Nav
 import Html.Styled as HtmlStyled
 import Html.Styled.Attributes as Attr
+import Taco
 import Url
 import Url.Parser as Parser
-import Browser
 
 
 type Route
@@ -34,6 +36,15 @@ parser =
         ]
 
 
+redirect : Taco.Taco -> Route -> Cmd msg
+redirect sharedState route =
+    let
+        routeString =
+            routeToString route
+    in
+    Nav.replaceUrl (Taco.getKey sharedState) routeString
+
+
 href : Route -> HtmlStyled.Attribute msg
 href route =
     Attr.href (routeToString route)
@@ -47,7 +58,7 @@ routeToString route =
 
         NextPageRoute ->
             "nextpage"
-            
+
 
 externalRouteToString : ExternalRoute -> String
 externalRouteToString route =

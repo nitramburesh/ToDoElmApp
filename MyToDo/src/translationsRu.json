@@ -5,7 +5,7 @@
     "google": "google",
     "showList": "показать список",
     "hideList": "Скрыть список",
-    "initialState": "начальное состояние",
+    "loadItems": "загружать предметы",
     "english" : "английский",
     "russian" : "русский",
     "language" : "язык"
