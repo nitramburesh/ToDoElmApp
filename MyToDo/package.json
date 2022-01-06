@@ -15,7 +15,7 @@
     "3000": "npx elm-app start",
     "analyse": "npx elm-analyse -s -p 50000",
     "test": "npx elm-test",
-    "build": "npx parcel ./public/index.html"
+    "build": "npx parcel public/index.html"
   },
   "dependencies": {
     "elm-live": "^4.0.2"
