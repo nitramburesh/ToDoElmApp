@@ -80,11 +80,13 @@
     return cache[name].exports;
 
     function localRequire(x) {
-      return newRequire(localRequire.resolve(x));
+      var res = localRequire.resolve(x);
+      return res === false ? {} : newRequire(res);
     }
 
     function resolve(x) {
-      return modules[name][1][x] || x;
+      var id = modules[name][1][x];
+      return id != null ? id : x;
     }
   }
 
@@ -140,13 +142,25 @@
       this[globalName] = mainExports;
     }
   }
-})({"lBB98":[function(require,module,exports) {
+})({"j1F46":[function(require,module,exports) {
 var HMR_HOST = null;
 var HMR_PORT = null;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "4a236f9275d0a351";
 module.bundle.HMR_BUNDLE_ID = "c9b2bbcd379dd93c";
 "use strict";
+function _toConsumableArray(arr) {
+    return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread();
+}
+function _nonIterableSpread() {
+    throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+}
+function _iterableToArray(iter) {
+    if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
+}
+function _arrayWithoutHoles(arr) {
+    if (Array.isArray(arr)) return _arrayLikeToArray(arr);
+}
 function _createForOfIteratorHelper(o, allowArrayLike) {
     var it;
     if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) {
@@ -406,6 +420,16 @@ function hmrApply(bundle, asset) {
     else if (asset.type === 'js') {
         var deps = asset.depsByBundle[bundle.HMR_BUNDLE_ID];
         if (deps) {
+            if (modules[asset.id]) {
+                // Remove dependencies that are removed and will become orphaned.
+                // This is necessary so that if the asset is added back again, the cache is gone, and we prevent a full page reload.
+                var oldDeps = modules[asset.id][1];
+                for(var dep in oldDeps)if (!deps[dep] || deps[dep] !== oldDeps[dep]) {
+                    var id = oldDeps[dep];
+                    var parents = getParents(module.bundle.root, id);
+                    if (parents.length === 1) hmrDelete(module.bundle.root, id);
+                }
+            }
             var fn = new Function('require', 'module', 'exports', asset.output);
             modules[asset.id] = [
                 fn,
@@ -414,7 +438,48 @@ function hmrApply(bundle, asset) {
         } else if (bundle.parent) hmrApply(bundle.parent, asset);
     }
 }
+function hmrDelete(bundle, id1) {
+    var modules = bundle.modules;
+    if (!modules) return;
+    if (modules[id1]) {
+        // Collect dependencies that will become orphaned when this module is deleted.
+        var deps = modules[id1][1];
+        var orphans = [];
+        for(var dep in deps){
+            var parents = getParents(module.bundle.root, deps[dep]);
+            if (parents.length === 1) orphans.push(deps[dep]);
+        } // Delete the module. This must be done before deleting dependencies in case of circular dependencies.
+        delete modules[id1];
+        delete bundle.cache[id1]; // Now delete the orphans.
+        orphans.forEach(function(id) {
+            hmrDelete(module.bundle.root, id);
+        });
+    } else if (bundle.parent) hmrDelete(bundle.parent, id1);
+}
 function hmrAcceptCheck(bundle, id, depsByBundle) {
+    if (hmrAcceptCheckOne(bundle, id, depsByBundle)) return true;
+     // Traverse parents breadth first. All possible ancestries must accept the HMR update, or we'll reload.
+    var parents = getParents(module.bundle.root, id);
+    var accepted = false;
+    while(parents.length > 0){
+        var v = parents.shift();
+        var a = hmrAcceptCheckOne(v[0], v[1], null);
+        if (a) // If this parent accepts, stop traversing upward, but still consider siblings.
+        accepted = true;
+        else {
+            // Otherwise, queue the parents in the next level upward.
+            var p = getParents(module.bundle.root, v[1]);
+            if (p.length === 0) {
+                // If there are no parents, then we've reached an entry without accepting. Reload.
+                accepted = false;
+                break;
+            }
+            parents.push.apply(parents, _toConsumableArray(p));
+        }
+    }
+    return accepted;
+}
+function hmrAcceptCheckOne(bundle, id, depsByBundle) {
     var modules = bundle.modules;
     if (!modules) return;
     if (depsByBundle && !depsByBundle[bundle.HMR_BUNDLE_ID]) {
@@ -430,12 +495,7 @@ function hmrAcceptCheck(bundle, id, depsByBundle) {
         bundle,
         id
     ]);
-    if (cached && cached.hot && cached.hot._acceptCallbacks.length) return true;
-    var parents = getParents(module.bundle.root, id); // If no parents, the asset is new. Prevent reloading the page.
-    if (!parents.length) return true;
-    return parents.some(function(v) {
-        return hmrAcceptCheck(v[0], v[1], null);
-    });
+    if (!cached || cached.hot && cached.hot._acceptCallbacks.length) return true;
 }
 function hmrAcceptRun(bundle, id) {
     var cached = bundle.cache[id];
@@ -473,7 +533,7 @@ const initMainApp = ()=>{
     const flags = {
         baseApiUrl: ELM_APP_BASE_API_URL,
         toDoItems: JSON.parse(localStorage.getItem("to-do-items")),
-        accessToken: "accessToken",
+        accessToken: "",
         translations: {
             en: _translationsEnJsonDefault.default,
             ru: _translationsRuJsonDefault.default
@@ -494,7 +554,7 @@ initMainApp();
 // Learn more about service workers: https://bit.ly/CRA-PWA
 _serviceWorker.unregister();
 
-},{"./Main.elm":"jaXzP","./serviceWorker":"1YbVS","./translationsEn.json":"fhxqa","./translationsRu.json":"iNmBJ","@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV","./main.css":"aVBtf"}],"jaXzP":[function(require,module,exports) {
+},{"./main.css":"aVBtf","./Main.elm":"jaXzP","./serviceWorker":"1YbVS","./translationsEn.json":"fhxqa","./translationsRu.json":"iNmBJ","@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV"}],"aVBtf":[function() {},{}],"jaXzP":[function(require,module,exports) {
 (function(scope) {
     function F(arity, fun, wrapper) {
         wrapper.a = arity;
@@ -3709,16 +3769,6 @@ type alias Process =
             }
         }));
     }
-    function _Url_percentEncode(string) {
-        return encodeURIComponent(string);
-    }
-    function _Url_percentDecode(string) {
-        try {
-            return $elm$core$Maybe$Just(decodeURIComponent(string));
-        } catch (e) {
-            return $elm$core$Maybe$Nothing;
-        }
-    }
     function _Time_now(millisToPosix) {
         return _Scheduler_binding(function(callback) {
             callback(_Scheduler_succeed(millisToPosix(Date.now())));
@@ -3748,6 +3798,16 @@ type alias Process =
             }
             callback(_Scheduler_succeed(name));
         });
+    }
+    function _Url_percentEncode(string) {
+        return encodeURIComponent(string);
+    }
+    function _Url_percentDecode(string) {
+        try {
+            return $elm$core$Maybe$Just(decodeURIComponent(string));
+        } catch (e) {
+            return $elm$core$Maybe$Nothing;
+        }
     }
     // SEND REQUEST
     var _Http_toTask = F3(function(router, toTask, request) {
@@ -7719,6 +7779,12 @@ type alias Process =
         }
     };
     var $elm$browser$Browser$application = _Browser_application;
+    var $author$project$Main$AdjustedTimeZone = function(a) {
+        return {
+            $: 'AdjustedTimeZone',
+            a: a
+        };
+    };
     var $author$project$Main$FlagsError = {
         $: 'FlagsError'
     };
@@ -7729,6 +7795,12 @@ type alias Process =
             b: b
         };
     });
+    var $author$project$Main$Tick = function(a) {
+        return {
+            $: 'Tick',
+            a: a
+        };
+    };
     var $author$project$Main$Flags = F4(function(baseApiUrl, toDoItems, accessToken, translations) {
         return {
             accessToken: accessToken,
@@ -7807,7 +7879,7 @@ type alias Process =
         $ChristophP$elm_i18next$I18Next$cyclic$treeDecoder = function() {
             return $ChristophP$elm_i18next$I18Next$treeDecoder;
         };
-    } catch ($) {
+    } catch ($1) {
         throw 'Some top-level definitions from `I18Next` are causing infinite recursion:\n\n  ┌─────┐\n  │    treeDecoder\n  └─────┘\n\nThese errors are very tricky, so read https://elm-lang.org/0.19.1/bad-recursion to learn how to fix it!';
     }
     var $ChristophP$elm_i18next$I18Next$translationsDecoder = A2($elm$json$Json$Decode$map, A2($elm$core$Basics$composeR, $ChristophP$elm_i18next$I18Next$flattenTranslations, $ChristophP$elm_i18next$I18Next$Translations), $elm$json$Json$Decode$dict($ChristophP$elm_i18next$I18Next$treeDecoder));
@@ -7857,6 +7929,27 @@ type alias Process =
         return A2($NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom, A3($NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalDecoder, A2($elm$json$Json$Decode$field, key, $elm$json$Json$Decode$value), valDecoder, fallback), decoder);
     });
     var $author$project$Main$decodeFlags = A3($NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required, 'translations', $author$project$Translations$decode, A3($NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required, 'accessToken', $elm$json$Json$Decode$string, A4($NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional, 'toDoItems', $author$project$ToDoItems$decodeToDoItems, $author$project$ToDoItems$initialToDoItems, A3($NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required, 'baseApiUrl', $elm$json$Json$Decode$string, $elm$json$Json$Decode$succeed($author$project$Main$Flags)))));
+    var $elm$time$Time$Name = function(a) {
+        return {
+            $: 'Name',
+            a: a
+        };
+    };
+    var $elm$time$Time$Offset = function(a) {
+        return {
+            $: 'Offset',
+            a: a
+        };
+    };
+    var $elm$time$Time$Zone = F2(function(a, b) {
+        return {
+            $: 'Zone',
+            a: a,
+            b: b
+        };
+    });
+    var $elm$time$Time$customZone = $elm$time$Time$Zone;
+    var $elm$time$Time$here = _Time_here(_Utils_Tuple0);
     var $author$project$Api$Api = function(a) {
         return {
             $: 'Api',
@@ -7878,12 +7971,13 @@ type alias Process =
             a: a
         };
     };
-    var $author$project$Taco$init = F4(function(translations, api, key, currentTime) {
+    var $author$project$Taco$init = F5(function(translations, api, key, currentTime, timeZone) {
         return $author$project$Taco$Taco({
             api: api,
             currentTime: currentTime,
             key: key,
             showingLanguageButtons: false,
+            timeZone: timeZone,
             translations: translations
         });
     });
@@ -7894,6 +7988,7 @@ type alias Process =
         };
     };
     var $elm$time$Time$millisToPosix = $elm$time$Time$Posix;
+    var $elm$time$Time$now = _Time_now($elm$time$Time$millisToPosix);
     var $elm$url$Url$Parser$State = F5(function(visited, unvisited, params, frag, value) {
         return {
             frag: frag,
@@ -8064,6 +8159,9 @@ type alias Process =
             a: a
         };
     };
+    var $author$project$Main$NotFoundPage = {
+        $: 'NotFoundPage'
+    };
     var $author$project$Main$ToDoItemPage = function(a) {
         return {
             $: 'ToDoItemPage',
@@ -8080,6 +8178,9 @@ type alias Process =
         var key = _v0.a.key;
         return key;
     };
+    var $author$project$Pages$ToDoItemPage$All = {
+        $: 'All'
+    };
     var $author$project$Pages$ToDoItemPage$ModelInternal = function(a) {
         return {
             $: 'ModelInternal',
@@ -8089,19 +8190,29 @@ type alias Process =
     var $krisajenkins$remotedata$RemoteData$NotAsked = {
         $: 'NotAsked'
     };
+    var $emilianobovetti$elm_toast$Toast$Private = function(a) {
+        return {
+            $: 'Private',
+            a: a
+        };
+    };
+    var $emilianobovetti$elm_toast$Toast$tray = $emilianobovetti$elm_toast$Toast$Private({
+        currentId: 0,
+        toasts: _List_Nil
+    });
     var $author$project$Pages$ToDoItemPage$init = function(toDoItems) {
         return _Utils_Tuple2($author$project$Pages$ToDoItemPage$ModelInternal({
+            idCount: $elm$core$List$length(toDoItems),
+            itemTitleToAdd: '',
             searchedText: '',
-            showingItems: false,
+            selectedFilterTab: $author$project$Pages$ToDoItemPage$All,
+            showingItems: true,
             toDoItems: toDoItems,
-            toDoItemsWebData: $krisajenkins$remotedata$RemoteData$NotAsked
+            toDoItemsWebData: $krisajenkins$remotedata$RemoteData$NotAsked,
+            tray: $emilianobovetti$elm_toast$Toast$tray
         }), $elm$core$Platform$Cmd$none);
     };
     var $elm$browser$Browser$Navigation$replaceUrl = _Browser_replaceUrl;
-    var $author$project$Router$routeToString = function(route) {
-        if (route.$ === 'ToDoItemRoute') return 'todoitempage';
-        else return 'nextpage';
-    };
     var $author$project$Main$routeToPage = F2(function(_v0, route) {
         var sharedState = _v0.sharedState;
         var flags = _v0.flags;
@@ -8119,34 +8230,32 @@ type alias Process =
                 var nextPageCmd = _v5.b;
                 return _Utils_Tuple2($author$project$Main$NextPage(nextPageModel), A2($elm$core$Platform$Cmd$map, $author$project$Main$NextPageMsg, nextPageCmd));
             }
-        } else {
-            var _v6 = $author$project$Pages$ToDoItemPage$init(flags.toDoItems);
-            var toDoItemPageModel = _v6.a;
-            return _Utils_Tuple2($author$project$Main$ToDoItemPage(toDoItemPageModel), A2($elm$browser$Browser$Navigation$replaceUrl, $author$project$Taco$getKey(sharedState), $author$project$Router$routeToString($author$project$Router$ToDoItemRoute)));
-        }
+        } else return _Utils_Tuple2($author$project$Main$NotFoundPage, A2($elm$browser$Browser$Navigation$replaceUrl, $author$project$Taco$getKey(sharedState), '/notfoundpage'));
     });
+    var $elm$time$Time$utc = A2($elm$time$Time$Zone, 0, _List_Nil);
     var $author$project$Main$init = F3(function(rawFlags, url, key) {
         var _v0 = A2($elm$json$Json$Decode$decodeValue, $author$project$Main$decodeFlags, rawFlags);
         if (_v0.$ === 'Ok') {
             var flags = _v0.a;
+            var getTimeZone = A2($elm$core$Task$perform, $author$project$Main$AdjustedTimeZone, $elm$time$Time$here);
+            var getCurrentTime = A2($elm$core$Task$perform, $author$project$Main$Tick, $elm$time$Time$now);
             var api = $author$project$Api$init(flags);
             var readyModel = {
                 flags: flags,
-                sharedState: A4($author$project$Taco$init, flags.translations, api, key, $elm$time$Time$millisToPosix(0)),
+                sharedState: A5($author$project$Taco$init, flags.translations, api, key, $elm$time$Time$millisToPosix(0), $elm$time$Time$utc),
                 showingTranslations: false
             };
             var _v1 = A2($author$project$Main$routeToPage, readyModel, $author$project$Router$parseUrl(url));
             var page = _v1.a;
             var pageCmd = _v1.b;
-            return _Utils_Tuple2(A2($author$project$Main$Ready, readyModel, page), pageCmd);
+            var allCmds = $elm$core$Platform$Cmd$batch(_List_fromArray([
+                pageCmd,
+                getTimeZone,
+                getCurrentTime
+            ]));
+            return _Utils_Tuple2(A2($author$project$Main$Ready, readyModel, page), allCmds);
         } else return _Utils_Tuple2($author$project$Main$FlagsError, $elm$core$Platform$Cmd$none);
     });
-    var $author$project$Main$Tick = function(a) {
-        return {
-            $: 'Tick',
-            a: a
-        };
-    };
     var $elm$time$Time$Every = F2(function(a, b) {
         return {
             $: 'Every',
@@ -8175,26 +8284,6 @@ type alias Process =
     });
     var $elm$core$Process$kill = _Scheduler_kill;
     var $elm$core$Platform$sendToSelf = _Platform_sendToSelf;
-    var $elm$time$Time$Name = function(a) {
-        return {
-            $: 'Name',
-            a: a
-        };
-    };
-    var $elm$time$Time$Offset = function(a) {
-        return {
-            $: 'Offset',
-            a: a
-        };
-    };
-    var $elm$time$Time$Zone = F2(function(a, b) {
-        return {
-            $: 'Zone',
-            a: a,
-            b: b
-        };
-    });
-    var $elm$time$Time$customZone = $elm$time$Time$Zone;
     var $elm$time$Time$setInterval = _Time_setInterval;
     var $elm$core$Process$spawn = _Scheduler_spawn;
     var $elm$time$Time$spawnHelp = F3(function(router, intervals, processes) {
@@ -8242,7 +8331,6 @@ type alias Process =
             return A3($elm$time$Time$spawnHelp, router, spawnList, existingDict);
         }, killTask));
     });
-    var $elm$time$Time$now = _Time_now($elm$time$Time$millisToPosix);
     var $elm$time$Time$onSelfMsg = F3(function(router, interval, state) {
         var _v0 = A2($elm$core$Dict$get, interval, state.taggers);
         if (_v0.$ === 'Nothing') return $elm$core$Task$succeed(state);
@@ -8277,6 +8365,18 @@ type alias Process =
             a: a
         };
     };
+    var $author$project$Taco$UpdatedTime = function(a) {
+        return {
+            $: 'UpdatedTime',
+            a: a
+        };
+    };
+    var $author$project$Taco$UpdatedZone = function(a) {
+        return {
+            $: 'UpdatedZone',
+            a: a
+        };
+    };
     var $author$project$Translations$changeLanguage = F2(function(language, _v0) {
         var modelPayload = _v0.a;
         var updatedModelPayload = _Utils_update(modelPayload, {
@@ -8290,8 +8390,11 @@ type alias Process =
     };
     var $elm$browser$Browser$Navigation$load = _Browser_load;
     var $elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
-    var $author$project$Main$redirect = F2(function(_v0, route) {
-        var sharedState = _v0.sharedState;
+    var $author$project$Router$routeToString = function(route) {
+        if (route.$ === 'ToDoItemRoute') return 'todoitempage';
+        else return 'nextpage';
+    };
+    var $author$project$Router$redirect = F2(function(sharedState, route) {
         var routeString = $author$project$Router$routeToString(route);
         return A2($elm$browser$Browser$Navigation$replaceUrl, $author$project$Taco$getKey(sharedState), routeString);
     });
@@ -8317,33 +8420,47 @@ type alias Process =
         }();
         return A3($elm$url$Url$addPrefixed, '#', url.fragment, A3($elm$url$Url$addPrefixed, '?', url.query, _Utils_ap(A2($elm$url$Url$addPort, url.port_, _Utils_ap(http, url.host)), url.path)));
     };
+    var $author$project$Taco$UpdatedLanguage = function(a) {
+        return {
+            $: 'UpdatedLanguage',
+            a: a
+        };
+    };
     var $author$project$Taco$UpdatedShowingTranslationsButton = function(a) {
         return {
             $: 'UpdatedShowingTranslationsButton',
             a: a
         };
     };
-    var $author$project$Taco$UpdatedTranslations = function(a) {
-        return {
-            $: 'UpdatedTranslations',
-            a: a
-        };
-    };
-    var $author$project$Header$update = F2(function(msg, sharedState) {
+    var $author$project$Header$update = function(msg) {
         if (msg.$ === 'ChangedLanguage') {
-            var translations = msg.a;
-            var updatedTranslations = A2($author$project$Translations$changeLanguage, translations, $author$project$Taco$getTranslations(sharedState));
-            return _Utils_Tuple2($elm$core$Platform$Cmd$none, $author$project$Taco$UpdatedTranslations(updatedTranslations));
+            var language = msg.a;
+            return _Utils_Tuple2($elm$core$Platform$Cmd$none, $author$project$Taco$UpdatedLanguage(language));
         } else {
             var bool = msg.a;
             return _Utils_Tuple2($elm$core$Platform$Cmd$none, $author$project$Taco$UpdatedShowingTranslationsButton(bool));
         }
-    });
+    };
+    var $author$project$Pages$ToDoItemPage$AddToast = function(a) {
+        return {
+            $: 'AddToast',
+            a: a
+        };
+    };
+    var $author$project$Styled$DarkToast = {
+        $: 'DarkToast'
+    };
+    var $author$project$Styled$GreenToast = {
+        $: 'GreenToast'
+    };
     var $krisajenkins$remotedata$RemoteData$Loading = {
         $: 'Loading'
     };
     var $author$project$Taco$NoUpdate = {
         $: 'NoUpdate'
+    };
+    var $author$project$Styled$RedToast = {
+        $: 'RedToast'
     };
     var $author$project$Taco$SetAccessToken = function(a) {
         return {
@@ -8351,15 +8468,122 @@ type alias Process =
             a: a
         };
     };
-    var $elm$json$Json$Encode$bool = _Json_wrap;
-    var $elm$json$Json$Encode$int = _Json_wrap;
-    var $author$project$ToDoItems$encodeToDoItems = $elm$json$Json$Encode$list(function(item) {
-        return $elm$json$Json$Encode$object(_List_fromArray([
-            _Utils_Tuple2('id', $elm$json$Json$Encode$int(item.id)),
-            _Utils_Tuple2('title', $elm$json$Json$Encode$string(item.title)),
-            _Utils_Tuple2('completed', $elm$json$Json$Encode$bool(item.completed))
-        ]));
+    var $author$project$Pages$ToDoItemPage$ToastMsg = function(a) {
+        return {
+            $: 'ToastMsg',
+            a: a
+        };
+    };
+    var $elm$core$List$any = F2(function(isOkay, list) {
+        any: while(true){
+            if (!list.b) return false;
+            else {
+                var x = list.a;
+                var xs = list.b;
+                if (isOkay(x)) return true;
+                else {
+                    var $temp$isOkay = isOkay, $temp$list = xs;
+                    isOkay = $temp$isOkay;
+                    list = $temp$list;
+                    continue any;
+                }
+            }
+        }
     });
+    var $emilianobovetti$elm_toast$Toast$In = {
+        $: 'In'
+    };
+    var $emilianobovetti$elm_toast$Toast$Transition = F2(function(a, b) {
+        return {
+            $: 'Transition',
+            a: a,
+            b: b
+        };
+    });
+    var $elm$core$Process$sleep = _Process_sleep;
+    var $emilianobovetti$elm_toast$Toast$delay = F2(function(ms, msg) {
+        return A2($elm$core$Task$perform, $elm$core$Basics$always(msg), $elm$core$Process$sleep(ms));
+    });
+    var $emilianobovetti$elm_toast$Toast$Exit = {
+        $: 'Exit'
+    };
+    var $emilianobovetti$elm_toast$Toast$PrepareExit = function(a) {
+        return {
+            $: 'PrepareExit',
+            a: a
+        };
+    };
+    var $emilianobovetti$elm_toast$Toast$onEnter = F2(function(id, lifespan) {
+        switch(lifespan.$){
+            case 'Persistent':
+                return _List_Nil;
+            case 'ExpireIn':
+                var ttl = lifespan.a;
+                return _List_fromArray([
+                    A2($emilianobovetti$elm_toast$Toast$delay, ttl, A2($emilianobovetti$elm_toast$Toast$Transition, $emilianobovetti$elm_toast$Toast$Exit, id))
+                ]);
+            default:
+                var ttl = lifespan.a;
+                return _List_fromArray([
+                    A2($emilianobovetti$elm_toast$Toast$delay, ttl, $emilianobovetti$elm_toast$Toast$PrepareExit(id))
+                ]);
+        }
+    });
+    var $emilianobovetti$elm_toast$Toast$withCmds = F2(function(cmds, model) {
+        return _Utils_Tuple2(model, $elm$core$Platform$Cmd$batch(cmds));
+    });
+    var $emilianobovetti$elm_toast$Toast$internalAdd = F2(function(model, toast) {
+        var id = model.currentId;
+        var toasts = _Utils_ap(model.toasts, _List_fromArray([
+            _Utils_update(toast, {
+                id: id
+            })
+        ]));
+        return A2($emilianobovetti$elm_toast$Toast$withCmds, A2($elm$core$List$cons, A2($emilianobovetti$elm_toast$Toast$delay, 100, A2($emilianobovetti$elm_toast$Toast$Transition, $emilianobovetti$elm_toast$Toast$In, id)), A2($emilianobovetti$elm_toast$Toast$onEnter, id, toast.lifespan)), $emilianobovetti$elm_toast$Toast$Private(_Utils_update(model, {
+            currentId: id + 1,
+            toasts: toasts
+        })));
+    });
+    var $emilianobovetti$elm_toast$Toast$withoutCmd = function(model) {
+        return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+    };
+    var $emilianobovetti$elm_toast$Toast$addUniqueWith = F3(function(cmp, _v0, _v1) {
+        var model = _v0.a;
+        var toast = _v1.a;
+        return A2($elm$core$List$any, A2($elm$core$Basics$composeR, function($) {
+            return $.content;
+        }, cmp(toast.content)), model.toasts) ? $emilianobovetti$elm_toast$Toast$withoutCmd($emilianobovetti$elm_toast$Toast$Private(model)) : A2($emilianobovetti$elm_toast$Toast$internalAdd, model, toast);
+    });
+    var $emilianobovetti$elm_toast$Toast$addUnique = $emilianobovetti$elm_toast$Toast$addUniqueWith($elm$core$Basics$eq);
+    var $author$project$Pages$ToDoItemPage$delay = F2(function(ms, msg) {
+        return A2($elm$core$Task$perform, $elm$core$Basics$always(msg), $elm$core$Process$sleep(ms));
+    });
+    var $emilianobovetti$elm_toast$Toast$ExpireIn = function(a) {
+        return {
+            $: 'ExpireIn',
+            a: a
+        };
+    };
+    var $emilianobovetti$elm_toast$Toast$Blur = {
+        $: 'Blur'
+    };
+    var $emilianobovetti$elm_toast$Toast$Enter = {
+        $: 'Enter'
+    };
+    var $emilianobovetti$elm_toast$Toast$new = F2(function(lifespan, content) {
+        return $emilianobovetti$elm_toast$Toast$Private({
+            blurCount: 0,
+            content: content,
+            exitTransition: 0,
+            id: -1,
+            interaction: $emilianobovetti$elm_toast$Toast$Blur,
+            lifespan: lifespan,
+            phase: $emilianobovetti$elm_toast$Toast$Enter
+        });
+    });
+    var $emilianobovetti$elm_toast$Toast$expireIn = function(ttl) {
+        return $emilianobovetti$elm_toast$Toast$new($emilianobovetti$elm_toast$Toast$ExpireIn(ttl));
+    };
     var $author$project$Pages$ToDoItemPage$FetchResponse = function(a) {
         return {
             $: 'FetchResponse',
@@ -8632,17 +8856,172 @@ type alias Process =
     var $author$project$Pages$ToDoItemPage$fetchToDoItems = function(api) {
         return A4($author$project$Api$get, $author$project$ToDoItems$decodeToDoItems, $author$project$Pages$ToDoItemPage$FetchResponse, 'todos', api);
     };
+    var $elm$core$List$filter = F2(function(isGood, list) {
+        return A3($elm$core$List$foldr, F2(function(x, xs) {
+            return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+        }), _List_Nil, list);
+    });
     var $author$project$Taco$getApi = function(_v0) {
         var api = _v0.a.api;
         return api;
     };
+    var $elm$json$Json$Encode$bool = _Json_wrap;
+    var $elm$json$Json$Encode$int = _Json_wrap;
+    var $author$project$ToDoItems$encodeToDoItems = $elm$json$Json$Encode$list(function(item) {
+        return $elm$json$Json$Encode$object(_List_fromArray([
+            _Utils_Tuple2('id', $elm$json$Json$Encode$int(item.id)),
+            _Utils_Tuple2('title', $elm$json$Json$Encode$string(item.title)),
+            _Utils_Tuple2('completed', $elm$json$Json$Encode$bool(item.completed))
+        ]));
+    });
     var $author$project$ToDoItems$storeItems = _Platform_outgoingPort('storeItems', $elm$core$Basics$identity);
+    var $author$project$Pages$ToDoItemPage$storeToDosCmd = function(items) {
+        return $author$project$ToDoItems$storeItems($author$project$ToDoItems$encodeToDoItems(items));
+    };
     var $author$project$Pages$ToDoItemPage$toggleToDoList = function(model) {
         return _Utils_update(model, {
             searchedText: '',
             showingItems: !model.showingItems
         });
     };
+    var $emilianobovetti$elm_toast$Toast$Focus = {
+        $: 'Focus'
+    };
+    var $emilianobovetti$elm_toast$Toast$onBlur = function(toast) {
+        var _v0 = toast.lifespan;
+        if (_v0.$ === 'ExpireOnBlur') {
+            var ttl = _v0.a;
+            return _List_fromArray([
+                A2($emilianobovetti$elm_toast$Toast$delay, ttl, $emilianobovetti$elm_toast$Toast$PrepareExit(toast.id))
+            ]);
+        } else return _List_Nil;
+    };
+    var $emilianobovetti$elm_toast$Toast$handleBlur = function(toast) {
+        return A2($emilianobovetti$elm_toast$Toast$withCmds, $emilianobovetti$elm_toast$Toast$onBlur(toast), _Utils_update(toast, {
+            blurCount: toast.blurCount + 1,
+            interaction: $emilianobovetti$elm_toast$Toast$Blur
+        }));
+    };
+    var $emilianobovetti$elm_toast$Toast$fire = function(msg) {
+        return A2($elm$core$Task$perform, $elm$core$Basics$identity, $elm$core$Task$succeed(msg));
+    };
+    var $emilianobovetti$elm_toast$Toast$handlePrepareExit = function(toast) {
+        return _Utils_eq(toast.interaction, $emilianobovetti$elm_toast$Toast$Focus) || toast.blurCount > 0 ? $emilianobovetti$elm_toast$Toast$withoutCmd(_Utils_update(toast, {
+            blurCount: toast.blurCount - 1
+        })) : _Utils_Tuple2(toast, $emilianobovetti$elm_toast$Toast$fire(A2($emilianobovetti$elm_toast$Toast$Transition, $emilianobovetti$elm_toast$Toast$Exit, toast.id)));
+    };
+    var $emilianobovetti$elm_toast$Toast$Remove = function(a) {
+        return {
+            $: 'Remove',
+            a: a
+        };
+    };
+    var $emilianobovetti$elm_toast$Toast$handleStartExit = function(toast) {
+        return _Utils_Tuple2(_Utils_update(toast, {
+            phase: $emilianobovetti$elm_toast$Toast$Exit
+        }), A2($emilianobovetti$elm_toast$Toast$delay, toast.exitTransition, $emilianobovetti$elm_toast$Toast$Remove(toast.id)));
+    };
+    var $emilianobovetti$elm_toast$Toast$setToasts = F2(function(model, toasts) {
+        return _Utils_update(model, {
+            toasts: toasts
+        });
+    });
+    var $emilianobovetti$elm_toast$Toast$removeToast = F2(function(id, model) {
+        return $emilianobovetti$elm_toast$Toast$withoutCmd(A2($emilianobovetti$elm_toast$Toast$setToasts, model, A2($elm$core$List$filter, function(toast) {
+            return !_Utils_eq(toast.id, id);
+        }, model.toasts)));
+    });
+    var $emilianobovetti$elm_toast$Toast$findToastAndUpdate = F3(function(updater, dest, src) {
+        findToastAndUpdate: while(true){
+            if (src.b) {
+                var hd = src.a;
+                var tl = src.b;
+                var _v1 = updater(hd);
+                if (_v1.$ === 'Just') {
+                    var _v2 = _v1.a;
+                    var toast = _v2.a;
+                    var cmd = _v2.b;
+                    return _Utils_Tuple2(_Utils_ap($elm$core$List$reverse(dest), A2($elm$core$List$cons, toast, tl)), $elm$core$Maybe$Just(cmd));
+                } else {
+                    var $temp$updater = updater, $temp$dest = A2($elm$core$List$cons, hd, dest), $temp$src = tl;
+                    updater = $temp$updater;
+                    dest = $temp$dest;
+                    src = $temp$src;
+                    continue findToastAndUpdate;
+                }
+            } else return _Utils_Tuple2($elm$core$List$reverse(dest), $elm$core$Maybe$Nothing);
+        }
+    });
+    var $elm$core$Tuple$mapBoth = F3(function(funcA, funcB, _v0) {
+        var x = _v0.a;
+        var y = _v0.b;
+        return _Utils_Tuple2(funcA(x), funcB(y));
+    });
+    var $emilianobovetti$elm_toast$Toast$updateToastWithCmd = F3(function(updater, id, model) {
+        var doUpdate = function(toast) {
+            return _Utils_eq(toast.id, id) ? $elm$core$Maybe$Just(updater(toast)) : $elm$core$Maybe$Nothing;
+        };
+        return A3($elm$core$Tuple$mapBoth, $emilianobovetti$elm_toast$Toast$setToasts(model), $elm$core$Maybe$withDefault($elm$core$Platform$Cmd$none), A3($emilianobovetti$elm_toast$Toast$findToastAndUpdate, doUpdate, _List_Nil, model.toasts));
+    });
+    var $emilianobovetti$elm_toast$Toast$updateToast = function(updater) {
+        return $emilianobovetti$elm_toast$Toast$updateToastWithCmd(A2($elm$core$Basics$composeR, updater, $emilianobovetti$elm_toast$Toast$withoutCmd));
+    };
+    var $emilianobovetti$elm_toast$Toast$internalUpdate = function(msg) {
+        switch(msg.$){
+            case 'Transition':
+                switch(msg.a.$){
+                    case 'In':
+                        var _v1 = msg.a;
+                        var id = msg.b;
+                        return A2($emilianobovetti$elm_toast$Toast$updateToast, function(toast) {
+                            return _Utils_update(toast, {
+                                phase: $emilianobovetti$elm_toast$Toast$In
+                            });
+                        }, id);
+                    case 'Enter':
+                        var _v2 = msg.a;
+                        var id = msg.b;
+                        return A2($emilianobovetti$elm_toast$Toast$updateToast, function(toast) {
+                            return _Utils_update(toast, {
+                                phase: $emilianobovetti$elm_toast$Toast$Enter
+                            });
+                        }, id);
+                    default:
+                        var _v3 = msg.a;
+                        var id = msg.b;
+                        return A2($emilianobovetti$elm_toast$Toast$updateToastWithCmd, $emilianobovetti$elm_toast$Toast$handleStartExit, id);
+                }
+            case 'Interaction':
+                if (msg.a.$ === 'Focus') {
+                    var _v4 = msg.a;
+                    var id = msg.b;
+                    return A2($emilianobovetti$elm_toast$Toast$updateToast, function(toast) {
+                        return _Utils_update(toast, {
+                            interaction: $emilianobovetti$elm_toast$Toast$Focus
+                        });
+                    }, id);
+                } else {
+                    var _v5 = msg.a;
+                    var id = msg.b;
+                    return A2($emilianobovetti$elm_toast$Toast$updateToastWithCmd, $emilianobovetti$elm_toast$Toast$handleBlur, id);
+                }
+            case 'PrepareExit':
+                var id = msg.a;
+                return A2($emilianobovetti$elm_toast$Toast$updateToastWithCmd, $emilianobovetti$elm_toast$Toast$handlePrepareExit, id);
+            default:
+                var id = msg.a;
+                return $emilianobovetti$elm_toast$Toast$removeToast(id);
+        }
+    };
+    var $elm$core$Tuple$mapFirst = F2(function(func, _v0) {
+        var x = _v0.a;
+        var y = _v0.b;
+        return _Utils_Tuple2(func(x), y);
+    });
+    var $emilianobovetti$elm_toast$Toast$update = F2(function(msg, _v0) {
+        var model = _v0.a;
+        return A2($elm$core$Tuple$mapFirst, $emilianobovetti$elm_toast$Toast$Private, A2($emilianobovetti$elm_toast$Toast$internalUpdate, msg, model));
+    });
     var $krisajenkins$remotedata$RemoteData$withDefault = F2(function(_default, data) {
         if (data.$ === 'Success') {
             var x = data.a;
@@ -8654,12 +9033,13 @@ type alias Process =
         switch(msg.$){
             case 'FetchResponse':
                 var response = msg.a;
+                var unwrappedItems = A2($krisajenkins$remotedata$RemoteData$withDefault, model.toDoItems, response);
                 return _Utils_Tuple3($author$project$Pages$ToDoItemPage$ModelInternal(_Utils_update(model, {
-                    toDoItems: A2($krisajenkins$remotedata$RemoteData$withDefault, model.toDoItems, response),
+                    toDoItems: unwrappedItems,
                     toDoItemsWebData: response
-                })), $elm$core$Platform$Cmd$none, $author$project$Taco$NoUpdate);
+                })), $author$project$Pages$ToDoItemPage$storeToDosCmd(unwrappedItems), $author$project$Taco$NoUpdate);
             case 'ToggledToDoList':
-                return _Utils_Tuple3($author$project$Pages$ToDoItemPage$ModelInternal($author$project$Pages$ToDoItemPage$toggleToDoList(model)), $elm$core$Platform$Cmd$none, $author$project$Taco$NoUpdate);
+                return _Utils_Tuple3($author$project$Pages$ToDoItemPage$ModelInternal($author$project$Pages$ToDoItemPage$toggleToDoList(model)), $author$project$Pages$ToDoItemPage$storeToDosCmd(model.toDoItems), $author$project$Taco$NoUpdate);
             case 'ClickedCompleteToDoItem':
                 var id = msg.a;
                 var completed = msg.b;
@@ -8671,26 +9051,120 @@ type alias Process =
                 var updatedToDoItems = A2($elm$core$List$map, updatedToDoItem, model.toDoItems);
                 return _Utils_Tuple3($author$project$Pages$ToDoItemPage$ModelInternal(_Utils_update(model, {
                     toDoItems: updatedToDoItems
-                })), $author$project$ToDoItems$storeItems($author$project$ToDoItems$encodeToDoItems(updatedToDoItems)), $author$project$Taco$NoUpdate);
+                })), $author$project$Pages$ToDoItemPage$storeToDosCmd(updatedToDoItems), $author$project$Taco$NoUpdate);
             case 'InsertedSearchedText':
                 var searchedText = msg.a;
                 return _Utils_Tuple3($author$project$Pages$ToDoItemPage$ModelInternal(_Utils_update(model, {
                     searchedText: searchedText
                 })), $elm$core$Platform$Cmd$none, $author$project$Taco$NoUpdate);
             case 'ClickedInitialState':
+                var toastCmd = A2($author$project$Pages$ToDoItemPage$delay, 0, $author$project$Pages$ToDoItemPage$AddToast({
+                    color: $author$project$Styled$GreenToast,
+                    message: 'items successfully added!'
+                }));
+                var fetchCmd = $author$project$Pages$ToDoItemPage$fetchToDoItems($author$project$Taco$getApi(sharedState));
                 return _Utils_Tuple3($author$project$Pages$ToDoItemPage$ModelInternal(_Utils_update(model, {
                     showingItems: true,
                     toDoItemsWebData: $krisajenkins$remotedata$RemoteData$Loading
-                })), $author$project$Pages$ToDoItemPage$fetchToDoItems($author$project$Taco$getApi(sharedState)), $author$project$Taco$NoUpdate);
-            default:
+                })), $elm$core$Platform$Cmd$batch(_List_fromArray([
+                    toastCmd,
+                    fetchCmd
+                ])), $author$project$Taco$NoUpdate);
+            case 'InsertedToken':
                 var accessToken = msg.a;
                 return _Utils_Tuple3($author$project$Pages$ToDoItemPage$ModelInternal(model), $elm$core$Platform$Cmd$none, $author$project$Taco$SetAccessToken(accessToken));
+            case 'InsertedToDoItem':
+                var itemTitle = msg.a;
+                var updatedModel = _Utils_update(model, {
+                    itemTitleToAdd: itemTitle,
+                    searchedText: ''
+                });
+                return _Utils_Tuple3($author$project$Pages$ToDoItemPage$ModelInternal(updatedModel), $elm$core$Platform$Cmd$none, $author$project$Taco$NoUpdate);
+            case 'AddToDoItem':
+                var itemTitle = msg.a;
+                var isNotEmptyTitle = !!$elm$core$String$length(itemTitle);
+                var toastCmd = isNotEmptyTitle ? A2($author$project$Pages$ToDoItemPage$delay, 0, $author$project$Pages$ToDoItemPage$AddToast({
+                    color: $author$project$Styled$GreenToast,
+                    message: 'item successfully added!'
+                })) : A2($author$project$Pages$ToDoItemPage$delay, 0, $author$project$Pages$ToDoItemPage$AddToast({
+                    color: $author$project$Styled$RedToast,
+                    message: 'title is empty, this item is useless...'
+                }));
+                var id = $elm$core$List$length(model.toDoItems) + 1;
+                var item1 = {
+                    completed: false,
+                    id: id,
+                    title: itemTitle
+                };
+                var updatedToDoItems = A2($elm$core$List$cons, item1, model.toDoItems);
+                var storeCmd = isNotEmptyTitle ? $author$project$Pages$ToDoItemPage$storeToDosCmd(updatedToDoItems) : $elm$core$Platform$Cmd$none;
+                var updatedModel = isNotEmptyTitle ? _Utils_update(model, {
+                    idCount: id,
+                    itemTitleToAdd: '',
+                    toDoItems: updatedToDoItems
+                }) : model;
+                return _Utils_Tuple3($author$project$Pages$ToDoItemPage$ModelInternal(updatedModel), $elm$core$Platform$Cmd$batch(_List_fromArray([
+                    storeCmd,
+                    toastCmd
+                ])), $author$project$Taco$NoUpdate);
+            case 'DeletedItem':
+                var clickedItem = msg.a;
+                var toastCmd = A2($author$project$Pages$ToDoItemPage$delay, 0, $author$project$Pages$ToDoItemPage$AddToast({
+                    color: $author$project$Styled$DarkToast,
+                    message: 'item deleted'
+                }));
+                var filteredItems = A2($elm$core$List$filter, function(item) {
+                    return !_Utils_eq(item, clickedItem);
+                }, model.toDoItems);
+                var storeCmd = $author$project$Pages$ToDoItemPage$storeToDosCmd(filteredItems);
+                var updatedModel = _Utils_update(model, {
+                    toDoItems: filteredItems
+                });
+                return _Utils_Tuple3($author$project$Pages$ToDoItemPage$ModelInternal(updatedModel), $elm$core$Platform$Cmd$batch(_List_fromArray([
+                    storeCmd,
+                    toastCmd
+                ])), $author$project$Taco$NoUpdate);
+            case 'DeletedAllItems':
+                var toastCmd = !!$elm$core$List$length(model.toDoItems) ? A2($author$project$Pages$ToDoItemPage$delay, 0, $author$project$Pages$ToDoItemPage$AddToast({
+                    color: $author$project$Styled$DarkToast,
+                    message: 'items deleted!'
+                })) : A2($author$project$Pages$ToDoItemPage$delay, 0, $author$project$Pages$ToDoItemPage$AddToast({
+                    color: $author$project$Styled$RedToast,
+                    message: 'no items to delete!'
+                }));
+                var deletedItems = _List_Nil;
+                var storeCmd = $author$project$Pages$ToDoItemPage$storeToDosCmd(deletedItems);
+                var updatedModel = _Utils_update(model, {
+                    toDoItems: deletedItems
+                });
+                return _Utils_Tuple3($author$project$Pages$ToDoItemPage$ModelInternal(updatedModel), $elm$core$Platform$Cmd$batch(_List_fromArray([
+                    toastCmd,
+                    storeCmd
+                ])), $author$project$Taco$NoUpdate);
+            case 'AddToast':
+                var content = msg.a;
+                var _v2 = A2($emilianobovetti$elm_toast$Toast$addUnique, model.tray, A2($emilianobovetti$elm_toast$Toast$expireIn, 2000, content));
+                var tray = _v2.a;
+                var toastMsg = _v2.b;
+                return _Utils_Tuple3($author$project$Pages$ToDoItemPage$ModelInternal(_Utils_update(model, {
+                    tray: tray
+                })), A2($elm$core$Platform$Cmd$map, $author$project$Pages$ToDoItemPage$ToastMsg, toastMsg), $author$project$Taco$NoUpdate);
+            case 'ToastMsg':
+                var tmsg = msg.a;
+                var _v3 = A2($emilianobovetti$elm_toast$Toast$update, tmsg, model.tray);
+                var tray = _v3.a;
+                var newToastMsg = _v3.b;
+                return _Utils_Tuple3($author$project$Pages$ToDoItemPage$ModelInternal(_Utils_update(model, {
+                    tray: tray
+                })), A2($elm$core$Platform$Cmd$map, $author$project$Pages$ToDoItemPage$ToastMsg, newToastMsg), $author$project$Taco$NoUpdate);
+            default:
+                var tab = msg.a;
+                var updatedModel = _Utils_update(model, {
+                    selectedFilterTab: tab
+                });
+                return _Utils_Tuple3($author$project$Pages$ToDoItemPage$ModelInternal(updatedModel), $elm$core$Platform$Cmd$none, $author$project$Taco$NoUpdate);
         }
     });
-    var $author$project$Taco$getShowingLanguageButtons = function(_v0) {
-        var showingLanguageButtons = _v0.a.showingLanguageButtons;
-        return showingLanguageButtons;
-    };
     var $author$project$Api$setAccessToken = F2(function(token, _v0) {
         var baseApiUrl = _v0.a.baseApiUrl;
         var updatedPayload = {
@@ -8711,11 +9185,12 @@ type alias Process =
                     api: updatedApi
                 });
                 return $author$project$Taco$Taco(updatedTacoPayload);
-            case 'UpdatedTranslations':
-                var translations = msg.a;
+            case 'UpdatedLanguage':
+                var language = msg.a;
+                var updatedTranslations = A2($author$project$Translations$changeLanguage, language, sharedStatePayload.translations);
                 var updatedTacoPayload = _Utils_update(sharedStatePayload, {
-                    showingLanguageButtons: !$author$project$Taco$getShowingLanguageButtons($author$project$Taco$Taco(sharedStatePayload)),
-                    translations: translations
+                    showingLanguageButtons: false,
+                    translations: updatedTranslations
                 });
                 return $author$project$Taco$Taco(updatedTacoPayload);
             case 'UpdatedApi':
@@ -8730,19 +9205,19 @@ type alias Process =
                     showingLanguageButtons: !showingLanguageButtons
                 });
                 return $author$project$Taco$Taco(updatedTacoPayload);
-            default:
+            case 'UpdatedTime':
                 var currentTime = msg.a;
                 var updatedTacoPayload = _Utils_update(sharedStatePayload, {
                     currentTime: currentTime
                 });
                 return $author$project$Taco$Taco(updatedTacoPayload);
+            default:
+                var timeZone = msg.a;
+                var updatedTacoPayload = _Utils_update(sharedStatePayload, {
+                    timeZone: timeZone
+                });
+                return $author$project$Taco$Taco(updatedTacoPayload);
         }
-    });
-    var $author$project$Taco$updateTime = F2(function(_v0, time) {
-        var sharedState = _v0.a;
-        return $author$project$Taco$Taco(_Utils_update(sharedState, {
-            currentTime: time
-        }));
     });
     var $author$project$Taco$updateTranslations = F2(function(_v0, translations) {
         var sharedState = _v0.a;
@@ -8752,7 +9227,7 @@ type alias Process =
     });
     var $author$project$Main$update = F2(function(msg, model) {
         var _v0 = _Utils_Tuple2(msg, model);
-        _v0$9: while(true){
+        _v0$11: while(true){
             if (_v0.b.$ === 'Ready') switch(_v0.a.$){
                 case 'LinkClicked':
                     var urlRequest = _v0.a.a;
@@ -8788,7 +9263,7 @@ type alias Process =
                         });
                         var page = $author$project$Main$ToDoItemPage(updatedPageModel);
                         return _Utils_Tuple2(A2($author$project$Main$Ready, updatedReadyModel, page), A2($elm$core$Platform$Cmd$map, $author$project$Main$ToDoItemPageMsg, pageCmd));
-                    } else break _v0$9;
+                    } else break _v0$11;
                 case 'NextPageMsg':
                     if (_v0.b.b.$ === 'NextPage') {
                         var subMsg = _v0.a.a;
@@ -8805,30 +9280,40 @@ type alias Process =
                         });
                         var page = $author$project$Main$NextPage(updatedPageModel);
                         return _Utils_Tuple2(A2($author$project$Main$Ready, updatedReadyModel, page), A2($elm$core$Platform$Cmd$map, $author$project$Main$NextPageMsg, pageCmd));
-                    } else break _v0$9;
+                    } else break _v0$11;
                 case 'HeaderMsg':
                     var subMsg = _v0.a.a;
                     var _v9 = _v0.b;
                     var readyModel = _v9.a;
                     var page = _v9.b;
-                    var _v10 = A2($author$project$Header$update, subMsg, readyModel.sharedState);
-                    var pageCmd = _v10.a;
+                    var _v10 = $author$project$Header$update(subMsg);
+                    var headerCmd = _v10.a;
                     var sharedStateMsg = _v10.b;
                     var updatedTaco = A2($author$project$Taco$update, sharedStateMsg, readyModel.sharedState);
                     var updatedReadyModel = _Utils_update(readyModel, {
                         sharedState: updatedTaco
                     });
-                    return _Utils_Tuple2(A2($author$project$Main$Ready, updatedReadyModel, page), A2($elm$core$Platform$Cmd$map, $author$project$Main$HeaderMsg, pageCmd));
-                case 'Redirect':
-                    var route = _v0.a.a;
+                    return _Utils_Tuple2(A2($author$project$Main$Ready, updatedReadyModel, page), A2($elm$core$Platform$Cmd$map, $author$project$Main$HeaderMsg, headerCmd));
+                case 'TacoMsg':
+                    var subMsg = _v0.a.a;
                     var _v11 = _v0.b;
                     var readyModel = _v11.a;
-                    return _Utils_Tuple2(model, A2($author$project$Main$redirect, readyModel, route));
-                case 'ChangedLanguage':
-                    var language = _v0.a.a;
+                    var page = _v11.b;
+                    var updatedTaco = A2($author$project$Taco$update, subMsg, readyModel.sharedState);
+                    var updatedReadyModel = _Utils_update(readyModel, {
+                        sharedState: updatedTaco
+                    });
+                    return _Utils_Tuple2(A2($author$project$Main$Ready, updatedReadyModel, page), $elm$core$Platform$Cmd$none);
+                case 'Redirect':
+                    var route = _v0.a.a;
                     var _v12 = _v0.b;
                     var readyModel = _v12.a;
-                    var page = _v12.b;
+                    return _Utils_Tuple2(model, A2($author$project$Router$redirect, readyModel.sharedState, route));
+                case 'ChangedLanguage':
+                    var language = _v0.a.a;
+                    var _v13 = _v0.b;
+                    var readyModel = _v13.a;
+                    var page = _v13.b;
                     var updatedTranslations = A2($author$project$Translations$changeLanguage, language, $author$project$Taco$getTranslations(readyModel.sharedState));
                     var updatedTaco = A2($author$project$Taco$updateTranslations, readyModel.sharedState, updatedTranslations);
                     var updatedModel = _Utils_update(readyModel, {
@@ -8838,25 +9323,35 @@ type alias Process =
                     return _Utils_Tuple2(A2($author$project$Main$Ready, updatedModel, page), $elm$core$Platform$Cmd$none);
                 case 'ClickedShowLanguageButtons':
                     var isShowing = _v0.a.a;
-                    var _v13 = _v0.b;
-                    var readyModel = _v13.a;
-                    var page = _v13.b;
+                    var _v14 = _v0.b;
+                    var readyModel = _v14.a;
+                    var page = _v14.b;
                     var updatedModel = _Utils_update(readyModel, {
                         showingTranslations: !isShowing
                     });
                     return _Utils_Tuple2(A2($author$project$Main$Ready, updatedModel, page), $elm$core$Platform$Cmd$none);
-                default:
-                    var currentTime = _v0.a.a;
-                    var _v14 = _v0.b;
-                    var readyModel = _v14.a;
-                    var page = _v14.b;
-                    var updatedTaco = A2($author$project$Taco$updateTime, readyModel.sharedState, currentTime);
-                    var updatedModel = _Utils_update(readyModel, {
+                case 'Tick':
+                    var time = _v0.a.a;
+                    var _v15 = _v0.b;
+                    var readyModel = _v15.a;
+                    var page = _v15.b;
+                    var updatedTaco = A2($author$project$Taco$update, $author$project$Taco$UpdatedTime(time), readyModel.sharedState);
+                    var updatedReadyModel = _Utils_update(readyModel, {
                         sharedState: updatedTaco
                     });
-                    return _Utils_Tuple2(A2($author$project$Main$Ready, updatedModel, page), $elm$core$Platform$Cmd$none);
+                    return _Utils_Tuple2(A2($author$project$Main$Ready, updatedReadyModel, page), $elm$core$Platform$Cmd$none);
+                default:
+                    var zone = _v0.a.a;
+                    var _v16 = _v0.b;
+                    var readyModel = _v16.a;
+                    var page = _v16.b;
+                    var updatedTaco = A2($author$project$Taco$update, $author$project$Taco$UpdatedZone(zone), readyModel.sharedState);
+                    var updatedReadyModel = _Utils_update(readyModel, {
+                        sharedState: updatedTaco
+                    });
+                    return _Utils_Tuple2(A2($author$project$Main$Ready, updatedReadyModel, page), $elm$core$Platform$Cmd$none);
             }
-            else break _v0$9;
+            else break _v0$11;
         }
         return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
     });
@@ -8966,22 +9461,6 @@ type alias Process =
             a: a
         };
     };
-    var $elm$core$List$any = F2(function(isOkay, list) {
-        any: while(true){
-            if (!list.b) return false;
-            else {
-                var x = list.a;
-                var xs = list.b;
-                if (isOkay(x)) return true;
-                else {
-                    var $temp$isOkay = isOkay, $temp$list = xs;
-                    isOkay = $temp$isOkay;
-                    list = $temp$list;
-                    continue any;
-                }
-            }
-        }
-    });
     var $elm$core$List$all = F2(function(isOkay, list) {
         return !A2($elm$core$List$any, A2($elm$core$Basics$composeL, $elm$core$Basics$not, isOkay), list);
     });
@@ -9070,11 +9549,6 @@ type alias Process =
             return '@charset \"' + (str + '\"');
         }, charset));
     };
-    var $elm$core$List$filter = F2(function(isGood, list) {
-        return A3($elm$core$List$foldr, F2(function(x, xs) {
-            return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
-        }), _List_Nil, list);
-    });
     var $rtfeldman$elm_css$Css$Structure$Output$mediaExpressionToString = function(expression) {
         return '(' + (expression.feature + (A2($elm$core$Maybe$withDefault, '', A2($elm$core$Maybe$map, $elm$core$Basics$append(': '), expression.value)) + ')'));
     };
@@ -10592,15 +11066,16 @@ type alias Process =
     };
     var $author$project$Styled$theme = {
         black: $rtfeldman$elm_css$Css$hex('#000000'),
-        blue: $rtfeldman$elm_css$Css$hex('#2E8BC0'),
+        blue: $rtfeldman$elm_css$Css$hex('#284560'),
         darkShadow: $rtfeldman$elm_css$Css$hex('#565857'),
-        gray: $rtfeldman$elm_css$Css$hex('#868B8E'),
-        grayer: $rtfeldman$elm_css$Css$hex('#495057'),
-        itemsWrapperColor: $rtfeldman$elm_css$Css$hex('#868B8E'),
+        grey: $rtfeldman$elm_css$Css$hex('#868B8E'),
+        greyer: $rtfeldman$elm_css$Css$hex('#495057'),
+        itemsWrapperColor: $rtfeldman$elm_css$Css$hex('#868B8EAA'),
         lightShadow: $rtfeldman$elm_css$Css$hex('#C0C0C0'),
         navyBlue: $rtfeldman$elm_css$Css$hex('#05445E'),
         red: $rtfeldman$elm_css$Css$hex('#FC2E20'),
         redOrange: $rtfeldman$elm_css$Css$hex('#FF5C4D'),
+        transparentWhite: $rtfeldman$elm_css$Css$hex('#FFFFFFCC'),
         white: $rtfeldman$elm_css$Css$hex('#FFFFFF')
     };
     var $rtfeldman$elm_css$Css$Transitions$Transform = {
@@ -11033,6 +11508,9 @@ type alias Process =
     var $author$project$Translations$Ru = {
         $: 'Ru'
     };
+    var $rtfeldman$elm_css$Css$alignSelf = function(fn) {
+        return A3($rtfeldman$elm_css$Css$Internal$getOverloadedProperty, 'alignSelf', 'align-self', fn($rtfeldman$elm_css$Css$Internal$lengthForOverloadedProperty));
+    };
     var $rtfeldman$elm_css$Css$borderRadius = $rtfeldman$elm_css$Css$prop1('border-radius');
     var $rtfeldman$elm_css$Html$Styled$button = $rtfeldman$elm_css$Html$Styled$node('button');
     var $rtfeldman$elm_css$Css$Transitions$BackgroundColor = {
@@ -11057,41 +11535,48 @@ type alias Process =
     var $rtfeldman$elm_css$Html$Styled$Events$onClick = function(msg) {
         return A2($rtfeldman$elm_css$Html$Styled$Events$on, 'click', $elm$json$Json$Decode$succeed(msg));
     };
+    var $author$project$Styled$squareButton = F2(function(bgColor, hoverBgColor) {
+        return _List_fromArray([
+            $rtfeldman$elm_css$Css$backgroundColor(bgColor),
+            $rtfeldman$elm_css$Css$hover(_List_fromArray([
+                $rtfeldman$elm_css$Css$backgroundColor(hoverBgColor)
+            ])),
+            $author$project$Styled$colorTransition
+        ]);
+    });
     var $author$project$Styled$btn = F2(function(variant, msg) {
         var variantStyles = function() {
             switch(variant.$){
-                case 'RedSquare':
-                    return _List_fromArray([
-                        $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.redOrange),
-                        $rtfeldman$elm_css$Css$hover(_List_fromArray([
-                            $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.red)
-                        ])),
-                        $author$project$Styled$colorTransition
-                    ]);
+                case 'GreySquare':
+                    return A2($author$project$Styled$squareButton, $author$project$Styled$theme.grey, $author$project$Styled$theme.black);
                 case 'Grey':
                     return _List_fromArray([
-                        $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.gray),
+                        $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.grey),
+                        $rtfeldman$elm_css$Css$borderRadius($rtfeldman$elm_css$Css$rem(1)),
                         $rtfeldman$elm_css$Css$hover(_List_fromArray([
-                            $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.grayer)
+                            $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.greyer)
                         ])),
                         $author$project$Styled$colorTransition
                     ]);
                 case 'BlueSquare':
-                    return _List_fromArray([
-                        $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.blue),
-                        $rtfeldman$elm_css$Css$hover(_List_fromArray([
-                            $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.navyBlue)
-                        ])),
-                        $author$project$Styled$colorTransition
-                    ]);
+                    return A2($author$project$Styled$squareButton, $author$project$Styled$theme.blue, $author$project$Styled$theme.black);
+                case 'RedSquare':
+                    return A2($author$project$Styled$squareButton, $author$project$Styled$theme.red, $author$project$Styled$theme.black);
                 case 'Blue':
                     return _List_fromArray([
                         $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.blue),
-                        $rtfeldman$elm_css$Css$borderRadius($rtfeldman$elm_css$Css$rem(1.5)),
+                        $rtfeldman$elm_css$Css$borderRadius($rtfeldman$elm_css$Css$rem(0.3)),
+                        $rtfeldman$elm_css$Css$fontSize($rtfeldman$elm_css$Css$rem(1)),
+                        $rtfeldman$elm_css$Css$padding($rtfeldman$elm_css$Css$rem(0)),
+                        $rtfeldman$elm_css$Css$height($rtfeldman$elm_css$Css$rem(2.5)),
+                        $rtfeldman$elm_css$Css$width($rtfeldman$elm_css$Css$rem(2.5)),
+                        $rtfeldman$elm_css$Css$alignSelf($rtfeldman$elm_css$Css$center),
                         $rtfeldman$elm_css$Css$hover(_List_fromArray([
-                            $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.navyBlue)
+                            $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.navyBlue),
+                            $rtfeldman$elm_css$Css$fontSize($rtfeldman$elm_css$Css$rem(2))
                         ])),
-                        $author$project$Styled$colorTransition
+                        $author$project$Styled$colorTransition,
+                        $author$project$Styled$fontTransition
                     ]);
                 default:
                     return _List_fromArray([
@@ -11128,6 +11613,10 @@ type alias Process =
             $rtfeldman$elm_css$Css$width($rtfeldman$elm_css$Css$pct(25))
         ]))
     ]));
+    var $author$project$Taco$getShowingLanguageButtons = function(_v0) {
+        var showingLanguageButtons = _v0.a.showingLanguageButtons;
+        return showingLanguageButtons;
+    };
     var $ChristophP$elm_i18next$I18Next$Curly = {
         $: 'Curly'
     };
@@ -11232,13 +11721,17 @@ type alias Process =
             $rtfeldman$elm_css$Css$color($author$project$Styled$theme.black),
             $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.white),
             A2($rtfeldman$elm_css$Css$padding2, $rtfeldman$elm_css$Css$rem(1), $rtfeldman$elm_css$Css$rem(1)),
-            $rtfeldman$elm_css$Css$borderRadius($rtfeldman$elm_css$Css$rem(2)),
-            A6($rtfeldman$elm_css$Css$boxShadow6, $rtfeldman$elm_css$Css$inset, $rtfeldman$elm_css$Css$rem(0), $rtfeldman$elm_css$Css$rem(0), $rtfeldman$elm_css$Css$rem(0.4), $rtfeldman$elm_css$Css$rem(0.3), $author$project$Styled$theme.lightShadow)
+            $rtfeldman$elm_css$Css$borderRadius($rtfeldman$elm_css$Css$rem(1)),
+            A6($rtfeldman$elm_css$Css$boxShadow6, $rtfeldman$elm_css$Css$inset, $rtfeldman$elm_css$Css$rem(-0.2), $rtfeldman$elm_css$Css$rem(0.3), $rtfeldman$elm_css$Css$rem(0.3), $rtfeldman$elm_css$Css$rem(0.01), $author$project$Styled$theme.lightShadow)
         ]))
     ]));
     var $author$project$Taco$getTime = function(_v0) {
         var currentTime = _v0.a.currentTime;
         return currentTime;
+    };
+    var $author$project$Taco$getZone = function(_v0) {
+        var timeZone = _v0.a.timeZone;
+        return timeZone;
     };
     var $elm$time$Time$flooredDiv = F2(function(numerator, denominator) {
         return $elm$core$Basics$floor(numerator / denominator);
@@ -11275,20 +11768,14 @@ type alias Process =
     var $elm$time$Time$toMinute = F2(function(zone, time) {
         return A2($elm$core$Basics$modBy, 60, A2($elm$time$Time$toAdjustedMinutes, zone, time));
     });
-    var $elm$time$Time$toSecond = F2(function(_v0, time) {
-        return A2($elm$core$Basics$modBy, 60, A2($elm$time$Time$flooredDiv, $elm$time$Time$posixToMillis(time), 1000));
-    });
-    var $elm$time$Time$utc = A2($elm$time$Time$Zone, 0, _List_Nil);
     var $author$project$TimeModule$viewTimeAsString = function(sharedState) {
+        var zone = $author$project$Taco$getZone(sharedState);
         var time = $author$project$Taco$getTime(sharedState);
-        var second = $elm$core$String$fromInt(A2($elm$time$Time$toSecond, $elm$time$Time$utc, time));
-        var rawSecond = A2($elm$time$Time$toSecond, $elm$time$Time$utc, time);
-        var secondComma = rawSecond > 9 ? ':' : ':0';
         var rawMinute = A2($elm$time$Time$toMinute, $elm$time$Time$utc, time);
-        var minute = $elm$core$String$fromInt(A2($elm$time$Time$toMinute, $elm$time$Time$utc, time));
-        var hour = $elm$core$String$fromInt(A2($elm$time$Time$toHour, $elm$time$Time$utc, time));
-        var firstComma = rawMinute > 9 ? ':' : ':0';
-        return _Utils_ap(hour, _Utils_ap(firstComma, _Utils_ap(minute, _Utils_ap(secondComma, second))));
+        var minute = $elm$core$String$fromInt(A2($elm$time$Time$toMinute, zone, time));
+        var hour = $elm$core$String$fromInt(A2($elm$time$Time$toHour, zone, time));
+        var colon = rawMinute > 9 ? ':' : ':0';
+        return _Utils_ap(hour, _Utils_ap(colon, minute));
     };
     var $author$project$TimeModule$viewTimeWrapped = function(sharedState) {
         var time = $author$project$TimeModule$viewTimeAsString(sharedState);
@@ -11296,7 +11783,7 @@ type alias Process =
             $rtfeldman$elm_css$Html$Styled$text(time)
         ]));
     };
-    var $author$project$Header$navigationHeaderView = function(sharedState) {
+    var $author$project$Header$view = function(sharedState) {
         var _v0 = $author$project$Translations$translators($author$project$Taco$getTranslations(sharedState));
         var t = _v0.t;
         return $author$project$Styled$navbarWrapper(_List_fromArray([
@@ -11315,26 +11802,54 @@ type alias Process =
             $author$project$TimeModule$viewTimeWrapped(sharedState)
         ]));
     };
-    var $author$project$Main$headerView = function(readyModel) {
-        return A2($rtfeldman$elm_css$Html$Styled$map, $author$project$Main$HeaderMsg, $author$project$Header$navigationHeaderView(readyModel.sharedState));
+    var $author$project$Main$headerView = function(_v0) {
+        var sharedState = _v0.sharedState;
+        return A2($rtfeldman$elm_css$Html$Styled$map, $author$project$Main$HeaderMsg, $author$project$Header$view(sharedState));
     };
     var $rtfeldman$elm_css$Html$Styled$h1 = $rtfeldman$elm_css$Html$Styled$node('h1');
-    var $author$project$Pages$NotFoundPage$view = A2($rtfeldman$elm_css$Html$Styled$div, _List_Nil, _List_fromArray([
-        A2($rtfeldman$elm_css$Html$Styled$h1, _List_Nil, _List_fromArray([
-            $rtfeldman$elm_css$Html$Styled$text('OOPS')
-        ])),
-        A2($rtfeldman$elm_css$Html$Styled$div, _List_Nil, _List_fromArray([
-            $rtfeldman$elm_css$Html$Styled$text('I tried REALLY hard but couldn\'t find the page you were looking for, mate.')
+    var $rtfeldman$elm_css$Css$marginTop = $rtfeldman$elm_css$Css$prop1('margin-top');
+    var $author$project$Styled$homeAnchor = function(route) {
+        var homeAnchorStyles = _List_fromArray([
+            $rtfeldman$elm_css$Css$marginTop($rtfeldman$elm_css$Css$rem(2)),
+            $rtfeldman$elm_css$Css$hover(_List_fromArray([
+                $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.blue)
+            ]))
+        ]);
+        return $rtfeldman$elm_css$Html$Styled$a(_List_fromArray([
+            $rtfeldman$elm_css$Html$Styled$Attributes$css(A2($elm$core$List$append, $author$project$Styled$styledAnchor, homeAnchorStyles)),
+            $author$project$Router$href(route)
+        ]));
+    };
+    var $author$project$Styled$notFoundPageWrapper = $rtfeldman$elm_css$Html$Styled$div(_List_fromArray([
+        $rtfeldman$elm_css$Html$Styled$Attributes$css(_List_fromArray([
+            $rtfeldman$elm_css$Css$displayFlex,
+            $rtfeldman$elm_css$Css$flexDirection($rtfeldman$elm_css$Css$column),
+            $rtfeldman$elm_css$Css$marginTop($rtfeldman$elm_css$Css$rem(10))
         ]))
     ]));
+    var $author$project$Pages$NotFoundPage$view = function(sharedState) {
+        var _v0 = $author$project$Translations$translators($author$project$Taco$getTranslations(sharedState));
+        var t = _v0.t;
+        return $author$project$Styled$notFoundPageWrapper(_List_fromArray([
+            A2($rtfeldman$elm_css$Html$Styled$h1, _List_Nil, _List_fromArray([
+                $rtfeldman$elm_css$Html$Styled$text('OOPS...')
+            ])),
+            A2($rtfeldman$elm_css$Html$Styled$div, _List_Nil, _List_fromArray([
+                $rtfeldman$elm_css$Html$Styled$text('I tried REALLY hard but couldn\'t find the page you were looking for, mate.')
+            ])),
+            A2($author$project$Styled$homeAnchor, $author$project$Router$ToDoItemRoute, _List_fromArray([
+                $rtfeldman$elm_css$Html$Styled$text(t('buttons.home'))
+            ]))
+        ]));
+    };
     var $author$project$Styled$BlueSquare = {
         $: 'BlueSquare'
     };
     var $author$project$Pages$ToDoItemPage$ClickedInitialState = {
         $: 'ClickedInitialState'
     };
-    var $author$project$Styled$RedSquare = {
-        $: 'RedSquare'
+    var $author$project$Pages$ToDoItemPage$DeletedAllItems = {
+        $: 'DeletedAllItems'
     };
     var $author$project$Pages$ToDoItemPage$ToggledToDoList = {
         $: 'ToggledToDoList'
@@ -11353,6 +11868,19 @@ type alias Process =
             $rtfeldman$elm_css$Css$alignItems($rtfeldman$elm_css$Css$center)
         ]))
     ]));
+    var $emilianobovetti$elm_toast$Toast$config = function(toAppMsg) {
+        return $emilianobovetti$elm_toast$Toast$Private({
+            enterAttributes: _List_Nil,
+            exitAttributes: _List_Nil,
+            focusAttributes: _List_Nil,
+            toAppMsg: toAppMsg,
+            toastAttributes: _List_Nil,
+            trayAttributes: _List_Nil,
+            trayNode: 'div'
+        });
+    };
+    var $rtfeldman$elm_css$VirtualDom$Styled$unstyledNode = $rtfeldman$elm_css$VirtualDom$Styled$Unstyled;
+    var $rtfeldman$elm_css$Html$Styled$fromUnstyled = $rtfeldman$elm_css$VirtualDom$Styled$unstyledNode;
     var $rtfeldman$elm_css$Html$Styled$img = $rtfeldman$elm_css$Html$Styled$node('img');
     var $rtfeldman$elm_css$Html$Styled$Attributes$src = function(url) {
         return A2($rtfeldman$elm_css$Html$Styled$Attributes$stringProperty, 'src', url);
@@ -11367,11 +11895,10 @@ type alias Process =
         ]));
     };
     var $rtfeldman$elm_css$Css$left = $rtfeldman$elm_css$Css$prop1('left');
-    var $rtfeldman$elm_css$Css$marginTop = $rtfeldman$elm_css$Css$prop1('margin-top');
     var $author$project$Styled$itemsWrapper = $rtfeldman$elm_css$Html$Styled$div(_List_fromArray([
         $rtfeldman$elm_css$Html$Styled$Attributes$css(_List_fromArray([
             $rtfeldman$elm_css$Css$displayFlex,
-            $rtfeldman$elm_css$Css$marginTop($rtfeldman$elm_css$Css$rem(3)),
+            $rtfeldman$elm_css$Css$marginTop($rtfeldman$elm_css$Css$rem(4.5)),
             $rtfeldman$elm_css$Css$marginBottom($rtfeldman$elm_css$Css$rem(3)),
             $rtfeldman$elm_css$Css$justifyContent($rtfeldman$elm_css$Css$center),
             $rtfeldman$elm_css$Css$alignItems($rtfeldman$elm_css$Css$left),
@@ -11382,11 +11909,88 @@ type alias Process =
             A4($rtfeldman$elm_css$Css$boxShadow4, $rtfeldman$elm_css$Css$rem(-0.5), $rtfeldman$elm_css$Css$rem(0.8), $rtfeldman$elm_css$Css$rem(0.5), $author$project$Styled$theme.lightShadow)
         ]))
     ]));
+    var $emilianobovetti$elm_toast$Toast$Interaction = F2(function(a, b) {
+        return {
+            $: 'Interaction',
+            a: a,
+            b: b
+        };
+    });
+    var $elm$html$Html$Attributes$map = $elm$virtual_dom$VirtualDom$mapAttribute;
+    var $emilianobovetti$elm_toast$Toast$mapAttributes = function(mapper) {
+        return $elm$core$List$map($elm$html$Html$Attributes$map(mapper));
+    };
+    var $elm$html$Html$Events$onBlur = function(msg) {
+        return A2($elm$html$Html$Events$on, 'blur', $elm$json$Json$Decode$succeed(msg));
+    };
+    var $elm$html$Html$Events$onFocus = function(msg) {
+        return A2($elm$html$Html$Events$on, 'focus', $elm$json$Json$Decode$succeed(msg));
+    };
+    var $elm$html$Html$Events$onMouseEnter = function(msg) {
+        return A2($elm$html$Html$Events$on, 'mouseenter', $elm$json$Json$Decode$succeed(msg));
+    };
+    var $elm$html$Html$Events$onMouseLeave = function(msg) {
+        return A2($elm$html$Html$Events$on, 'mouseleave', $elm$json$Json$Decode$succeed(msg));
+    };
+    var $elm$html$Html$Attributes$tabindex = function(n) {
+        return A2(_VirtualDom_attribute, 'tabIndex', $elm$core$String$fromInt(n));
+    };
+    var $emilianobovetti$elm_toast$Toast$defaultAttributes = F2(function(toAppMsg, id) {
+        return A2($emilianobovetti$elm_toast$Toast$mapAttributes, toAppMsg, _List_fromArray([
+            $elm$html$Html$Attributes$tabindex(0),
+            $elm$html$Html$Events$onMouseEnter(A2($emilianobovetti$elm_toast$Toast$Interaction, $emilianobovetti$elm_toast$Toast$Focus, id)),
+            $elm$html$Html$Events$onMouseLeave(A2($emilianobovetti$elm_toast$Toast$Interaction, $emilianobovetti$elm_toast$Toast$Blur, id)),
+            $elm$html$Html$Events$onFocus(A2($emilianobovetti$elm_toast$Toast$Interaction, $emilianobovetti$elm_toast$Toast$Focus, id)),
+            $elm$html$Html$Events$onBlur(A2($emilianobovetti$elm_toast$Toast$Interaction, $emilianobovetti$elm_toast$Toast$Blur, id))
+        ]));
+    });
+    var $emilianobovetti$elm_toast$Toast$interactionAttributes = F2(function(cfg, interaction) {
+        if (interaction.$ === 'Focus') return cfg.focusAttributes;
+        else return _List_Nil;
+    });
+    var $emilianobovetti$elm_toast$Toast$transitionAttributes = F2(function(cfg, phase) {
+        switch(phase.$){
+            case 'Enter':
+                return cfg.enterAttributes;
+            case 'In':
+                return _List_Nil;
+            default:
+                return cfg.exitAttributes;
+        }
+    });
+    var $emilianobovetti$elm_toast$Toast$allToastAttributes = F2(function(cfg, toast) {
+        return $elm$core$List$concat(_List_fromArray([
+            cfg.toastAttributes,
+            A2($emilianobovetti$elm_toast$Toast$interactionAttributes, cfg, toast.interaction),
+            A2($emilianobovetti$elm_toast$Toast$transitionAttributes, cfg, toast.phase),
+            A2($emilianobovetti$elm_toast$Toast$defaultAttributes, cfg.toAppMsg, toast.id)
+        ]));
+    });
+    var $emilianobovetti$elm_toast$Toast$toInfo = function(toast) {
+        return {
+            content: toast.content,
+            id: $emilianobovetti$elm_toast$Toast$Private(toast.id),
+            interaction: toast.interaction,
+            phase: toast.phase
+        };
+    };
+    var $emilianobovetti$elm_toast$Toast$renderToast = F3(function(viewer, cfg, toast) {
+        return _Utils_Tuple2('toast-' + $elm$core$String$fromInt(toast.id), A2(viewer, A2($emilianobovetti$elm_toast$Toast$allToastAttributes, cfg, toast), $emilianobovetti$elm_toast$Toast$toInfo(toast)));
+    });
+    var $emilianobovetti$elm_toast$Toast$render = F3(function(viewer, _v0, _v1) {
+        var model = _v0.a;
+        var cfg = _v1.a;
+        return A3($elm$html$Html$Keyed$node, cfg.trayNode, cfg.trayAttributes, A2($elm$core$List$map, A2($emilianobovetti$elm_toast$Toast$renderToast, viewer, cfg), model.toasts));
+    });
     var $author$project$Pages$ToDoItemPage$InsertedToken = function(a) {
         return {
             $: 'InsertedToken',
             a: a
         };
+    };
+    var $author$project$Api$getAccessToken = function(_v0) {
+        var accessToken = _v0.a.accessToken;
+        return accessToken;
     };
     var $rtfeldman$elm_css$Html$Styled$input = $rtfeldman$elm_css$Html$Styled$node('input');
     var $rtfeldman$elm_css$Html$Styled$Events$alwaysStop = function(x) {
@@ -11406,28 +12010,33 @@ type alias Process =
     var $rtfeldman$elm_css$Css$textAlign = function(fn) {
         return A3($rtfeldman$elm_css$Css$Internal$getOverloadedProperty, 'textAlign', 'text-align', fn($rtfeldman$elm_css$Css$Internal$lengthForOverloadedProperty));
     };
-    var $author$project$Styled$styledInput = F2(function(msg, placeholder) {
+    var $author$project$Styled$styledInput = _List_fromArray([
+        A2($rtfeldman$elm_css$Css$margin2, $rtfeldman$elm_css$Css$rem(0.5), $rtfeldman$elm_css$Css$rem(0)),
+        $rtfeldman$elm_css$Css$alignSelf($rtfeldman$elm_css$Css$center),
+        $rtfeldman$elm_css$Css$width($rtfeldman$elm_css$Css$rem(30)),
+        $rtfeldman$elm_css$Css$height($rtfeldman$elm_css$Css$rem(2)),
+        $rtfeldman$elm_css$Css$borderRadius($rtfeldman$elm_css$Css$rem(2)),
+        $rtfeldman$elm_css$Css$textAlign($rtfeldman$elm_css$Css$center),
+        $rtfeldman$elm_css$Css$fontSize($rtfeldman$elm_css$Css$rem(1)),
+        $rtfeldman$elm_css$Css$fontFamilies(_List_fromArray([
+            'Courier New'
+        ]))
+    ]);
+    var $rtfeldman$elm_css$Html$Styled$Attributes$value = $rtfeldman$elm_css$Html$Styled$Attributes$stringProperty('value');
+    var $author$project$Styled$inputOnInput = F3(function(msg, value, placeholder) {
         return $rtfeldman$elm_css$Html$Styled$input(_List_fromArray([
-            $rtfeldman$elm_css$Html$Styled$Attributes$css(_List_fromArray([
-                A2($rtfeldman$elm_css$Css$margin2, $rtfeldman$elm_css$Css$rem(1.5), $rtfeldman$elm_css$Css$rem(0)),
-                $rtfeldman$elm_css$Css$width($rtfeldman$elm_css$Css$rem(30)),
-                $rtfeldman$elm_css$Css$height($rtfeldman$elm_css$Css$rem(2)),
-                $rtfeldman$elm_css$Css$borderRadius($rtfeldman$elm_css$Css$rem(2)),
-                $rtfeldman$elm_css$Css$textAlign($rtfeldman$elm_css$Css$center),
-                $rtfeldman$elm_css$Css$fontSize($rtfeldman$elm_css$Css$rem(1)),
-                $rtfeldman$elm_css$Css$fontFamilies(_List_fromArray([
-                    'Courier New'
-                ]))
-            ])),
-            $rtfeldman$elm_css$Html$Styled$Events$onInput(msg),
-            $rtfeldman$elm_css$Html$Styled$Attributes$placeholder(placeholder)
+            $rtfeldman$elm_css$Html$Styled$Attributes$css($author$project$Styled$styledInput),
+            $rtfeldman$elm_css$Html$Styled$Attributes$placeholder(placeholder),
+            $rtfeldman$elm_css$Html$Styled$Attributes$value(value),
+            $rtfeldman$elm_css$Html$Styled$Events$onInput(msg)
         ]));
     });
     var $author$project$Pages$ToDoItemPage$setAccessTokenView = function(sharedState) {
+        var value = $author$project$Api$getAccessToken($author$project$Taco$getApi(sharedState));
         var _v0 = $author$project$Translations$translators($author$project$Taco$getTranslations(sharedState));
         var t = _v0.t;
         return $author$project$Styled$centeredWrapper(_List_fromArray([
-            A3($author$project$Styled$styledInput, $author$project$Pages$ToDoItemPage$InsertedToken, t('placeholders.insertToken'), _List_Nil)
+            A4($author$project$Styled$inputOnInput, $author$project$Pages$ToDoItemPage$InsertedToken, value, t('placeholders.insertToken'), _List_Nil)
         ]));
     };
     var $rtfeldman$elm_css$Css$letterSpacing = $rtfeldman$elm_css$Css$prop1('letter-spacing');
@@ -11443,11 +12052,45 @@ type alias Process =
             $rtfeldman$elm_css$Css$marginBottom($rtfeldman$elm_css$Css$rem(0))
         ]))
     ]));
+    var $author$project$Pages$ToDoItemPage$AddToDoItem = function(a) {
+        return {
+            $: 'AddToDoItem',
+            a: a
+        };
+    };
+    var $author$project$Styled$Blue = {
+        $: 'Blue'
+    };
     var $author$project$Pages$ToDoItemPage$InsertedSearchedText = function(a) {
         return {
             $: 'InsertedSearchedText',
             a: a
         };
+    };
+    var $author$project$Pages$ToDoItemPage$InsertedToDoItem = function(a) {
+        return {
+            $: 'InsertedToDoItem',
+            a: a
+        };
+    };
+    var $author$project$Styled$addItemsWrapper = $rtfeldman$elm_css$Html$Styled$div(_List_fromArray([
+        $rtfeldman$elm_css$Html$Styled$Attributes$css(_List_fromArray([
+            $rtfeldman$elm_css$Css$displayFlex,
+            $rtfeldman$elm_css$Css$justifyContent($rtfeldman$elm_css$Css$center),
+            $rtfeldman$elm_css$Css$width($rtfeldman$elm_css$Css$rem(30))
+        ]))
+    ]));
+    var $author$project$Styled$customInputOnInput = function(attributes) {
+        return $rtfeldman$elm_css$Html$Styled$input(A2($elm$core$List$append, _List_fromArray([
+            $rtfeldman$elm_css$Html$Styled$Attributes$css($author$project$Styled$styledInput)
+        ]), attributes));
+    };
+    var $rtfeldman$elm_css$Html$Styled$Events$keyCode = A2($elm$json$Json$Decode$field, 'keyCode', $elm$json$Json$Decode$int);
+    var $author$project$Pages$ToDoItemPage$onEnter = function(msg) {
+        var isEnter = function(code) {
+            return code === 13 ? $elm$json$Json$Decode$succeed(msg) : $elm$json$Json$Decode$fail('not ENTER');
+        };
+        return A2($rtfeldman$elm_css$Html$Styled$Events$on, 'keydown', A2($elm$json$Json$Decode$andThen, isEnter, $rtfeldman$elm_css$Html$Styled$Events$keyCode));
     };
     var $author$project$Pages$ToDoItemPage$ClickedCompleteToDoItem = F2(function(a, b) {
         return {
@@ -11491,11 +12134,57 @@ type alias Process =
     var $author$project$Styled$itemDiv = $rtfeldman$elm_css$Html$Styled$div(_List_fromArray([
         $rtfeldman$elm_css$Html$Styled$Attributes$css(_List_fromArray([
             $rtfeldman$elm_css$Css$displayFlex,
-            $rtfeldman$elm_css$Css$color($author$project$Styled$theme.white),
-            $rtfeldman$elm_css$Css$margin($rtfeldman$elm_css$Css$rem(1)),
-            $rtfeldman$elm_css$Css$position($rtfeldman$elm_css$Css$relative)
+            $rtfeldman$elm_css$Css$color($author$project$Styled$theme.black),
+            $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.transparentWhite),
+            A2($rtfeldman$elm_css$Css$margin2, $rtfeldman$elm_css$Css$rem(1), $rtfeldman$elm_css$Css$rem(0)),
+            $rtfeldman$elm_css$Css$padding($rtfeldman$elm_css$Css$rem(1)),
+            $rtfeldman$elm_css$Css$position($rtfeldman$elm_css$Css$relative),
+            $rtfeldman$elm_css$Css$borderRadius($rtfeldman$elm_css$Css$rem(1))
         ]))
     ]));
+    var $author$project$Pages$ToDoItemPage$DeletedItem = function(a) {
+        return {
+            $: 'DeletedItem',
+            a: a
+        };
+    };
+    var $rtfeldman$elm_css$Css$absolute = {
+        position: $rtfeldman$elm_css$Css$Structure$Compatible,
+        value: 'absolute'
+    };
+    var $rtfeldman$elm_css$Html$Styled$Attributes$class = $rtfeldman$elm_css$Html$Styled$Attributes$stringProperty('className');
+    var $rtfeldman$elm_css$Css$right = $rtfeldman$elm_css$Css$prop1('right');
+    var $rtfeldman$elm_css$Css$top = $rtfeldman$elm_css$Css$prop1('top');
+    var $author$project$Styled$deleteHoverButton = function(msg) {
+        return $rtfeldman$elm_css$Html$Styled$button(_List_fromArray([
+            $rtfeldman$elm_css$Html$Styled$Attributes$css(_List_fromArray([
+                $rtfeldman$elm_css$Css$borderStyle($rtfeldman$elm_css$Css$none),
+                $rtfeldman$elm_css$Css$textTransform($rtfeldman$elm_css$Css$uppercase),
+                $rtfeldman$elm_css$Css$fontFamilies(_List_fromArray([
+                    'Courier New'
+                ])),
+                $rtfeldman$elm_css$Css$cursor($rtfeldman$elm_css$Css$pointer),
+                $rtfeldman$elm_css$Css$margin($rtfeldman$elm_css$Css$rem(0)),
+                $rtfeldman$elm_css$Css$borderStyle($rtfeldman$elm_css$Css$none),
+                A2($rtfeldman$elm_css$Css$padding2, $rtfeldman$elm_css$Css$rem(0.5), $rtfeldman$elm_css$Css$rem(0.7)),
+                $rtfeldman$elm_css$Css$fontSize($rtfeldman$elm_css$Css$rem(1)),
+                $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.black),
+                $rtfeldman$elm_css$Css$color($author$project$Styled$theme.white),
+                $rtfeldman$elm_css$Css$position($rtfeldman$elm_css$Css$absolute),
+                $rtfeldman$elm_css$Css$right($rtfeldman$elm_css$Css$rem(1)),
+                $rtfeldman$elm_css$Css$top($rtfeldman$elm_css$Css$rem(0.6))
+            ])),
+            $rtfeldman$elm_css$Html$Styled$Attributes$class('displayOnParentHover'),
+            $rtfeldman$elm_css$Html$Styled$Events$onClick(msg)
+        ]));
+    };
+    var $author$project$Pages$ToDoItemPage$showDeleteButton = F2(function(item, sharedState) {
+        var _v0 = $author$project$Translations$translators($author$project$Taco$getTranslations(sharedState));
+        var t = _v0.t;
+        return A2($author$project$Styled$deleteHoverButton, $author$project$Pages$ToDoItemPage$DeletedItem(item), _List_fromArray([
+            $rtfeldman$elm_css$Html$Styled$text(t('buttons.deleteItem'))
+        ]));
+    });
     var $rtfeldman$elm_css$Css$marginLeft = $rtfeldman$elm_css$Css$prop1('margin-left');
     var $author$project$Styled$textDiv = $rtfeldman$elm_css$Html$Styled$div(_List_fromArray([
         $rtfeldman$elm_css$Html$Styled$Attributes$css(_List_fromArray([
@@ -11504,22 +12193,45 @@ type alias Process =
                 'Courier New'
             ])),
             $rtfeldman$elm_css$Css$fontSize($rtfeldman$elm_css$Css$rem(1.2)),
-            $rtfeldman$elm_css$Css$color($author$project$Styled$theme.white),
+            $rtfeldman$elm_css$Css$width($rtfeldman$elm_css$Css$pct(85)),
             $rtfeldman$elm_css$Css$textAlign($rtfeldman$elm_css$Css$left)
         ]))
     ]));
-    var $author$project$Pages$ToDoItemPage$renderToDoItems = function(_v0) {
-        var searchedText = _v0.searchedText;
-        var toDoItems = _v0.toDoItems;
-        return A2($elm$core$List$map, function(item) {
-            return $author$project$Styled$itemDiv(_List_fromArray([
-                A3($author$project$Styled$checkbox, item.completed, $author$project$Pages$ToDoItemPage$ClickedCompleteToDoItem(item.id), _List_Nil),
-                $author$project$Styled$textDiv(_List_fromArray([
-                    $rtfeldman$elm_css$Html$Styled$text(item.title)
-                ]))
-            ]));
-        }, A2($author$project$ToDoItems$filterItems, searchedText, toDoItems));
-    };
+    var $author$project$Pages$ToDoItemPage$renderToDoItems = F2(function(model, sharedState) {
+        var _v0 = model.selectedFilterTab;
+        switch(_v0.$){
+            case 'All':
+                return A2($elm$core$List$map, function(item) {
+                    return $author$project$Styled$itemDiv(_List_fromArray([
+                        A3($author$project$Styled$checkbox, item.completed, $author$project$Pages$ToDoItemPage$ClickedCompleteToDoItem(item.id), _List_Nil),
+                        $author$project$Styled$textDiv(_List_fromArray([
+                            $rtfeldman$elm_css$Html$Styled$text(item.title)
+                        ])),
+                        A2($author$project$Pages$ToDoItemPage$showDeleteButton, item, sharedState)
+                    ]));
+                }, A2($author$project$ToDoItems$filterItems, model.searchedText, model.toDoItems));
+            case 'Done':
+                return A2($elm$core$List$map, function(item) {
+                    return item.completed ? $author$project$Styled$itemDiv(_List_fromArray([
+                        A3($author$project$Styled$checkbox, item.completed, $author$project$Pages$ToDoItemPage$ClickedCompleteToDoItem(item.id), _List_Nil),
+                        $author$project$Styled$textDiv(_List_fromArray([
+                            $rtfeldman$elm_css$Html$Styled$text(item.title)
+                        ])),
+                        A2($author$project$Pages$ToDoItemPage$showDeleteButton, item, sharedState)
+                    ])) : $rtfeldman$elm_css$Html$Styled$text('');
+                }, A2($author$project$ToDoItems$filterItems, model.searchedText, model.toDoItems));
+            default:
+                return A2($elm$core$List$map, function(item) {
+                    return !item.completed ? $author$project$Styled$itemDiv(_List_fromArray([
+                        A3($author$project$Styled$checkbox, item.completed, $author$project$Pages$ToDoItemPage$ClickedCompleteToDoItem(item.id), _List_Nil),
+                        $author$project$Styled$textDiv(_List_fromArray([
+                            $rtfeldman$elm_css$Html$Styled$text(item.title)
+                        ])),
+                        A2($author$project$Pages$ToDoItemPage$showDeleteButton, item, sharedState)
+                    ])) : $rtfeldman$elm_css$Html$Styled$text('');
+                }, A2($author$project$ToDoItems$filterItems, model.searchedText, model.toDoItems));
+        }
+    });
     var $author$project$Styled$styledText = $rtfeldman$elm_css$Html$Styled$div(_List_fromArray([
         $rtfeldman$elm_css$Html$Styled$Attributes$css(_List_fromArray([
             $rtfeldman$elm_css$Css$textTransform($rtfeldman$elm_css$Css$uppercase),
@@ -11530,13 +12242,64 @@ type alias Process =
             $rtfeldman$elm_css$Css$color($author$project$Styled$theme.white)
         ]))
     ]));
-    var $author$project$Styled$wrapper = $rtfeldman$elm_css$Html$Styled$div(_List_fromArray([
-        $rtfeldman$elm_css$Html$Styled$Attributes$css(_List_fromArray([
-            $rtfeldman$elm_css$Css$displayFlex,
-            $rtfeldman$elm_css$Css$justifyContent($rtfeldman$elm_css$Css$center)
-        ]))
-    ]));
+    var $author$project$Pages$ToDoItemPage$Done = {
+        $: 'Done'
+    };
+    var $author$project$Pages$ToDoItemPage$NotDone = {
+        $: 'NotDone'
+    };
+    var $author$project$Pages$ToDoItemPage$SelectedFilterTab = function(a) {
+        return {
+            $: 'SelectedFilterTab',
+            a: a
+        };
+    };
+    var $rtfeldman$elm_css$Css$margin4 = $rtfeldman$elm_css$Css$prop4('margin');
+    var $author$project$Styled$filterButton = F2(function(isSelected, msg) {
+        var styles = _List_fromArray([
+            A4($rtfeldman$elm_css$Css$margin4, $rtfeldman$elm_css$Css$rem(0), $rtfeldman$elm_css$Css$rem(1), $rtfeldman$elm_css$Css$rem(1), $rtfeldman$elm_css$Css$rem(1)),
+            A2($rtfeldman$elm_css$Css$padding2, $rtfeldman$elm_css$Css$rem(0.5), $rtfeldman$elm_css$Css$rem(0.7)),
+            $rtfeldman$elm_css$Css$fontSize($rtfeldman$elm_css$Css$rem(1)),
+            $rtfeldman$elm_css$Css$textTransform($rtfeldman$elm_css$Css$uppercase),
+            $rtfeldman$elm_css$Css$right($rtfeldman$elm_css$Css$rem(1)),
+            $rtfeldman$elm_css$Css$top($rtfeldman$elm_css$Css$rem(0.6)),
+            $rtfeldman$elm_css$Css$cursor($rtfeldman$elm_css$Css$pointer)
+        ]);
+        var selectedStyles = isSelected ? _List_fromArray([
+            $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.white),
+            $rtfeldman$elm_css$Css$color($author$project$Styled$theme.black)
+        ]) : _List_fromArray([
+            $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.blue),
+            $rtfeldman$elm_css$Css$color($author$project$Styled$theme.white),
+            $rtfeldman$elm_css$Css$hover(_List_fromArray([
+                $rtfeldman$elm_css$Css$backgroundColor($author$project$Styled$theme.black)
+            ])),
+            $author$project$Styled$colorTransition
+        ]);
+        return $rtfeldman$elm_css$Html$Styled$button(_List_fromArray([
+            $rtfeldman$elm_css$Html$Styled$Attributes$css(_Utils_ap(styles, selectedStyles)),
+            $rtfeldman$elm_css$Html$Styled$Events$onClick(msg)
+        ]));
+    });
+    var $author$project$Pages$ToDoItemPage$viewFilterButtons = function(selectedFilterTab) {
+        var isSelected = function(tab) {
+            return _Utils_eq(tab, selectedFilterTab) ? true : false;
+        };
+        return A2($rtfeldman$elm_css$Html$Styled$div, _List_Nil, _List_fromArray([
+            A3($author$project$Styled$filterButton, isSelected($author$project$Pages$ToDoItemPage$All), $author$project$Pages$ToDoItemPage$SelectedFilterTab($author$project$Pages$ToDoItemPage$All), _List_fromArray([
+                $rtfeldman$elm_css$Html$Styled$text('all')
+            ])),
+            A3($author$project$Styled$filterButton, isSelected($author$project$Pages$ToDoItemPage$Done), $author$project$Pages$ToDoItemPage$SelectedFilterTab($author$project$Pages$ToDoItemPage$Done), _List_fromArray([
+                $rtfeldman$elm_css$Html$Styled$text('done')
+            ])),
+            A3($author$project$Styled$filterButton, isSelected($author$project$Pages$ToDoItemPage$NotDone), $author$project$Pages$ToDoItemPage$SelectedFilterTab($author$project$Pages$ToDoItemPage$NotDone), _List_fromArray([
+                $rtfeldman$elm_css$Html$Styled$text('not done')
+            ]))
+        ]));
+    };
     var $author$project$Pages$ToDoItemPage$viewToDos = F2(function(model, sharedState) {
+        var searchedText = model.searchedText;
+        var itemTitle = model.itemTitleToAdd;
         var _v0 = $author$project$Translations$translators($author$project$Taco$getTranslations(sharedState));
         var t = _v0.t;
         return A2($rtfeldman$elm_css$Html$Styled$div, _List_Nil, _List_fromArray([
@@ -11560,17 +12323,77 @@ type alias Process =
                 }
             }(),
             model.showingItems ? A2($rtfeldman$elm_css$Html$Styled$div, _List_Nil, _List_fromArray([
-                $author$project$Styled$wrapper(_List_fromArray([
-                    A3($author$project$Styled$styledInput, $author$project$Pages$ToDoItemPage$InsertedSearchedText, t('placeholders.searchItems'), _List_Nil)
+                $author$project$Styled$centeredWrapper(_List_fromArray([
+                    $author$project$Pages$ToDoItemPage$viewFilterButtons(model.selectedFilterTab),
+                    A4($author$project$Styled$inputOnInput, $author$project$Pages$ToDoItemPage$InsertedSearchedText, searchedText, t('placeholders.searchItems'), _List_Nil),
+                    $author$project$Styled$addItemsWrapper(_List_fromArray([
+                        A2($author$project$Styled$customInputOnInput, _List_fromArray([
+                            $rtfeldman$elm_css$Html$Styled$Events$onInput($author$project$Pages$ToDoItemPage$InsertedToDoItem),
+                            $rtfeldman$elm_css$Html$Styled$Attributes$value(itemTitle),
+                            $author$project$Pages$ToDoItemPage$onEnter($author$project$Pages$ToDoItemPage$AddToDoItem(itemTitle)),
+                            $rtfeldman$elm_css$Html$Styled$Attributes$placeholder(t('placeholders.addItem'))
+                        ]), _List_Nil),
+                        A3($author$project$Styled$btn, $author$project$Styled$Blue, $author$project$Pages$ToDoItemPage$AddToDoItem(model.itemTitleToAdd), _List_fromArray([
+                            $rtfeldman$elm_css$Html$Styled$text('+')
+                        ]))
+                    ]))
                 ])),
-                A2($rtfeldman$elm_css$Html$Styled$div, _List_Nil, $author$project$Pages$ToDoItemPage$renderToDoItems(model))
+                A2($rtfeldman$elm_css$Html$Styled$div, _List_Nil, A2($author$project$Pages$ToDoItemPage$renderToDoItems, model, sharedState))
             ])) : $author$project$Styled$styledText(_List_fromArray([
                 $rtfeldman$elm_css$Html$Styled$text(t('text.showListMessage'))
             ]))
         ]));
     });
+    var $author$project$Styled$toastStyles = function(toast) {
+        var background = function() {
+            var _v0 = toast.content.color;
+            switch(_v0.$){
+                case 'RedToast':
+                    return A2($elm$html$Html$Attributes$style, 'background', '#da3125');
+                case 'GreenToast':
+                    return A2($elm$html$Html$Attributes$style, 'background', '#1f9724');
+                default:
+                    return A2($elm$html$Html$Attributes$style, 'background', '#000000');
+            }
+        }();
+        return _List_fromArray([
+            background,
+            A2($elm$html$Html$Attributes$style, 'width', '20rem'),
+            A2($elm$html$Html$Attributes$style, 'text-transform', 'uppercase'),
+            A2($elm$html$Html$Attributes$style, 'font-size', '1rem'),
+            A2($elm$html$Html$Attributes$style, 'padding', '1rem'),
+            A2($elm$html$Html$Attributes$style, 'color', 'white'),
+            A2($elm$html$Html$Attributes$style, 'position', 'absolute'),
+            A2($elm$html$Html$Attributes$style, 'margin-left', 'auto'),
+            A2($elm$html$Html$Attributes$style, 'margin-right', 'auto'),
+            A2($elm$html$Html$Attributes$style, 'left', '0'),
+            A2($elm$html$Html$Attributes$style, 'right', '0'),
+            $elm$html$Html$Attributes$class('toast-fade-out')
+        ]);
+    };
+    var $author$project$Pages$ToDoItemPage$viewToast = F2(function(attributes, toast) {
+        return A2($elm$html$Html$div, _Utils_ap($author$project$Styled$toastStyles(toast), attributes), _List_fromArray([
+            $elm$html$Html$text(toast.content.message)
+        ]));
+    });
+    var $emilianobovetti$elm_toast$Toast$withTransitionAttributes = F2(function(attrs, _v0) {
+        var cfg = _v0.a;
+        return $emilianobovetti$elm_toast$Toast$Private(_Utils_update(cfg, {
+            enterAttributes: _Utils_ap(cfg.enterAttributes, attrs),
+            exitAttributes: _Utils_ap(cfg.exitAttributes, attrs)
+        }));
+    });
+    var $author$project$Styled$wrapper = $rtfeldman$elm_css$Html$Styled$div(_List_fromArray([
+        $rtfeldman$elm_css$Html$Styled$Attributes$css(_List_fromArray([
+            $rtfeldman$elm_css$Css$displayFlex,
+            $rtfeldman$elm_css$Css$justifyContent($rtfeldman$elm_css$Css$center)
+        ]))
+    ]));
     var $author$project$Pages$ToDoItemPage$view = F2(function(_v0, sharedState) {
-        var modelInternalPayload = _v0.a;
+        var model = _v0.a;
+        var toast = A3($emilianobovetti$elm_toast$Toast$render, $author$project$Pages$ToDoItemPage$viewToast, model.tray, A2($emilianobovetti$elm_toast$Toast$withTransitionAttributes, _List_fromArray([
+            $elm$html$Html$Attributes$class('toast-fade-out')
+        ]), $emilianobovetti$elm_toast$Toast$config($author$project$Pages$ToDoItemPage$ToastMsg)));
         var _v1 = $author$project$Translations$translators($author$project$Taco$getTranslations(sharedState));
         var t = _v1.t;
         return A2($rtfeldman$elm_css$Html$Styled$div, _List_Nil, _List_fromArray([
@@ -11581,15 +12404,19 @@ type alias Process =
                 A2($author$project$Styled$heroLogo, '/logo.png', _List_Nil),
                 $author$project$Pages$ToDoItemPage$setAccessTokenView(sharedState)
             ])),
-            A3($author$project$Styled$btn, $author$project$Styled$RedSquare, $author$project$Pages$ToDoItemPage$ToggledToDoList, _List_fromArray([
-                $rtfeldman$elm_css$Html$Styled$text(A2($author$project$Pages$ToDoItemPage$buttonTitle, modelInternalPayload, sharedState))
+            A3($author$project$Styled$btn, $author$project$Styled$BlueSquare, $author$project$Pages$ToDoItemPage$ToggledToDoList, _List_fromArray([
+                $rtfeldman$elm_css$Html$Styled$text(A2($author$project$Pages$ToDoItemPage$buttonTitle, model, sharedState))
             ])),
             A3($author$project$Styled$btn, $author$project$Styled$BlueSquare, $author$project$Pages$ToDoItemPage$ClickedInitialState, _List_fromArray([
-                $rtfeldman$elm_css$Html$Styled$text(t('buttons.initialState'))
+                $rtfeldman$elm_css$Html$Styled$text(t('buttons.loadItems'))
             ])),
+            A3($author$project$Styled$btn, $author$project$Styled$BlueSquare, $author$project$Pages$ToDoItemPage$DeletedAllItems, _List_fromArray([
+                $rtfeldman$elm_css$Html$Styled$text(t('buttons.deleteAllItems'))
+            ])),
+            $rtfeldman$elm_css$Html$Styled$fromUnstyled(toast),
             $author$project$Styled$wrapper(_List_fromArray([
                 $author$project$Styled$itemsWrapper(_List_fromArray([
-                    A2($author$project$Pages$ToDoItemPage$viewToDos, modelInternalPayload, sharedState)
+                    A2($author$project$Pages$ToDoItemPage$viewToDos, model, sharedState)
                 ]))
             ]))
         ]));
@@ -11604,7 +12431,7 @@ type alias Process =
                 var pageModel = page.a;
                 return A2($rtfeldman$elm_css$Html$Styled$map, $author$project$Main$NextPageMsg, A2($author$project$Pages$ToDoItemPage$view, pageModel, sharedState));
             default:
-                return $author$project$Pages$NotFoundPage$view;
+                return $author$project$Pages$NotFoundPage$view(sharedState);
         }
     });
     var $rtfeldman$elm_css$Html$Styled$h2 = $rtfeldman$elm_css$Html$Styled$node('h2');
@@ -11929,7 +12756,7 @@ type alias Process =
                     return {
                         body: _List_fromArray([
                             $rtfeldman$elm_css$Html$Styled$toUnstyled($author$project$Styled$wrapper(_List_fromArray([
-                                $author$project$Pages$NotFoundPage$view
+                                $author$project$Pages$NotFoundPage$view(readyModel.sharedState)
                             ])))
                         ]),
                         title: 'Page Not Found...'
@@ -11963,15 +12790,33 @@ type alias Process =
                             "args": [],
                             "type": "{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"
                         },
+                        "Time.Era": {
+                            "args": [],
+                            "type": "{ start : Basics.Int, offset : Basics.Int }"
+                        },
                         "ToDoItems.ToDoItem": {
                             "args": [],
                             "type": "{ id : Basics.Int, title : String.String, completed : Basics.Bool }"
+                        },
+                        "Styled.Toast": {
+                            "args": [],
+                            "type": "{ message : String.String, color : Styled.ToastColor }"
                         },
                         "RemoteData.WebData": {
                             "args": [
                                 "a"
                             ],
                             "type": "RemoteData.RemoteData Http.Error a"
+                        },
+                        "Api.ApiPayload": {
+                            "args": [
+                                "r"
+                            ],
+                            "type": "{ r | baseApiUrl : String.String, accessToken : String.String }"
+                        },
+                        "Toast.Id": {
+                            "args": [],
+                            "type": "Basics.Int"
                         }
                     },
                     "unions": {
@@ -11986,6 +12831,9 @@ type alias Process =
                                 ],
                                 "HeaderMsg": [
                                     "Header.Msg"
+                                ],
+                                "TacoMsg": [
+                                    "Taco.Msg"
                                 ],
                                 "LinkClicked": [
                                     "Browser.UrlRequest"
@@ -12004,6 +12852,9 @@ type alias Process =
                                 ],
                                 "Tick": [
                                     "Time.Posix"
+                                ],
+                                "AdjustedTimeZone": [
+                                    "Time.Zone"
                                 ]
                             }
                         },
@@ -12066,6 +12917,49 @@ type alias Process =
                                 "ClickedInitialState": [],
                                 "InsertedToken": [
                                     "String.String"
+                                ],
+                                "InsertedToDoItem": [
+                                    "String.String"
+                                ],
+                                "AddToDoItem": [
+                                    "String.String"
+                                ],
+                                "DeletedItem": [
+                                    "ToDoItems.ToDoItem"
+                                ],
+                                "DeletedAllItems": [],
+                                "ToastMsg": [
+                                    "Toast.Msg"
+                                ],
+                                "AddToast": [
+                                    "Styled.Toast"
+                                ],
+                                "SelectedFilterTab": [
+                                    "Pages.ToDoItemPage.FilterTabs"
+                                ]
+                            }
+                        },
+                        "Taco.Msg": {
+                            "args": [],
+                            "tags": {
+                                "NoUpdate": [],
+                                "SetAccessToken": [
+                                    "String.String"
+                                ],
+                                "UpdatedLanguage": [
+                                    "Translations.Language"
+                                ],
+                                "UpdatedApi": [
+                                    "Api.Api"
+                                ],
+                                "UpdatedShowingTranslationsButton": [
+                                    "Basics.Bool"
+                                ],
+                                "UpdatedTime": [
+                                    "Time.Posix"
+                                ],
+                                "UpdatedZone": [
+                                    "Time.Zone"
                                 ]
                             }
                         },
@@ -12108,6 +13002,23 @@ type alias Process =
                                 ]
                             }
                         },
+                        "Time.Zone": {
+                            "args": [],
+                            "tags": {
+                                "Zone": [
+                                    "Basics.Int",
+                                    "List.List Time.Era"
+                                ]
+                            }
+                        },
+                        "Api.Api": {
+                            "args": [],
+                            "tags": {
+                                "Api": [
+                                    "Api.ApiPayload {}"
+                                ]
+                            }
+                        },
                         "Http.Error": {
                             "args": [],
                             "tags": {
@@ -12124,11 +13035,38 @@ type alias Process =
                                 ]
                             }
                         },
+                        "Pages.ToDoItemPage.FilterTabs": {
+                            "args": [],
+                            "tags": {
+                                "Done": [],
+                                "NotDone": [],
+                                "All": []
+                            }
+                        },
                         "List.List": {
                             "args": [
                                 "a"
                             ],
                             "tags": {
+                            }
+                        },
+                        "Toast.Msg": {
+                            "args": [],
+                            "tags": {
+                                "Transition": [
+                                    "Toast.Phase",
+                                    "Toast.Id"
+                                ],
+                                "Interaction": [
+                                    "Toast.Interaction",
+                                    "Toast.Id"
+                                ],
+                                "PrepareExit": [
+                                    "Toast.Id"
+                                ],
+                                "Remove": [
+                                    "Toast.Id"
+                                ]
                             }
                         },
                         "RemoteData.RemoteData": {
@@ -12145,6 +13083,29 @@ type alias Process =
                                 "Success": [
                                     "a"
                                 ]
+                            }
+                        },
+                        "Styled.ToastColor": {
+                            "args": [],
+                            "tags": {
+                                "RedToast": [],
+                                "GreenToast": [],
+                                "DarkToast": []
+                            }
+                        },
+                        "Toast.Interaction": {
+                            "args": [],
+                            "tags": {
+                                "Focus": [],
+                                "Blur": []
+                            }
+                        },
+                        "Toast.Phase": {
+                            "args": [],
+                            "tags": {
+                                "Enter": [],
+                                "In": [],
+                                "Exit": []
                             }
                         }
                     }
@@ -12665,11 +13626,11 @@ exports.export = function(dest, destName, get) {
 };
 
 },{}],"fhxqa":[function(require,module,exports) {
-module.exports = JSON.parse("{\"buttons\":{\"nextPage\":\"next page\",\"home\":\"home\",\"google\":\"google\",\"showList\":\"show list\",\"hideList\":\"Hide List\",\"initialState\":\"initial state\",\"english\":\"english\",\"russian\":\"russian\",\"language\":\"language\"},\"text\":{\"welcomeHeading\":\"WELCOME TO: TO DO APP 3000!\",\"showListMessage\":\"CLICK BUTTON TO SHOW THE LIST\",\"loading\":\"loading items...\",\"loadingFailed\":\"loading items failed\",\"thisIsNextPage\":\"this is next page\"},\"placeholders\":{\"searchItems\":\"search items...\",\"insertToken\":\"insert your token...\"}}");
+module.exports = JSON.parse("{\"buttons\":{\"nextPage\":\"next page\",\"home\":\"home\",\"google\":\"google\",\"showList\":\"show list\",\"hideList\":\"Hide List\",\"loadItems\":\"load items\",\"english\":\"english\",\"russian\":\"russian\",\"language\":\"language\",\"deleteAllItems\":\"delete all items\",\"deleteItem\":\"delete\"},\"text\":{\"welcomeHeading\":\"WELCOME TO: TO DO APP 3000!\",\"showListMessage\":\"CLICK BUTTON TO SHOW THE LIST\",\"loading\":\"loading items...\",\"loadingFailed\":\"loading items failed\",\"thisIsNextPage\":\"this is next page\"},\"placeholders\":{\"searchItems\":\"search items...\",\"insertToken\":\"insert your token...\",\"addItem\":\"add item...\"}}");
 
 },{}],"iNmBJ":[function(require,module,exports) {
-module.exports = JSON.parse("{\"buttons\":{\"nextPage\":\"следущая страница\",\"home\":\"домой\",\"google\":\"google\",\"showList\":\"показать список\",\"hideList\":\"Скрыть список\",\"initialState\":\"начальное состояние\",\"english\":\"английский\",\"russian\":\"русский\",\"language\":\"язык\"},\"text\":{\"welcomeHeading\":\"Добро пожаловать в: TO DO APP 3000!\",\"showListMessage\":\"НАЖМИТЕ КНОПКУ, ЧТОБЫ ПОКАЗАТЬ СПИСОК\",\"loading\":\"загрузка...\",\"loadingFailed\":\"загрузка не удалась\",\"thisIsNextPage\":\"это следующая страница\"},\"placeholders\":{\"searchItems\":\"поиск предметов...\",\"insertToken\":\"вставьте свой токен...\"}}");
+module.exports = JSON.parse("{\"buttons\":{\"nextPage\":\"следущая страница\",\"home\":\"домой\",\"google\":\"google\",\"showList\":\"показать список\",\"hideList\":\"Скрыть список\",\"loadItems\":\"загружать предметы\",\"english\":\"английский\",\"russian\":\"русский\",\"language\":\"язык\",\"deleteAllItems\":\"удалить все элементы\",\"deleteItem\":\"удалить\"},\"text\":{\"welcomeHeading\":\"Добро пожаловать в: TO DO APP 3000!\",\"showListMessage\":\"НАЖМИТЕ КНОПКУ, ЧТОБЫ ПОКАЗАТЬ СПИСОК\",\"loading\":\"загрузка...\",\"loadingFailed\":\"загрузка не удалась\",\"thisIsNextPage\":\"это следующая страница\"},\"placeholders\":{\"searchItems\":\"поиск предметов...\",\"insertToken\":\"вставьте свой токен...\",\"addItem\":\"добавить что-то сделать...\"}}");
 
-},{}],"aVBtf":[function() {},{}]},["lBB98","hD4hw"], "hD4hw", "parcelRequire94c2")
+},{}]},["j1F46","hD4hw"], "hD4hw", "parcelRequire94c2")
 
 //# sourceMappingURL=index.379dd93c.js.map
