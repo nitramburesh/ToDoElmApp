@@ -8,6 +8,7 @@
     "elm-format": "^0.8.5",
     "elm-test": "^0.19.1-revision7",
     "parcel": "^2.1.0",
+    "parcel-bundler": "^1.12.5",
     "prettier": "^2.4.1"
   },
   "scripts": {
