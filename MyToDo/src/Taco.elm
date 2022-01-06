@@ -23,7 +23,7 @@ type alias TacoPayload =
 type Msg
     = NoUpdate
     | SetAccessToken String
-    | UpdatedTranslations Translations.Model
+    | UpdatedLanguage Translations.Language
     | UpdatedApi Api.Api
     | UpdatedShowingTranslationsButton Bool
     | UpdatedTime Time.Posix
@@ -66,10 +66,13 @@ update msg (Taco sharedStatePayload) =
             in
             Taco updatedTacoPayload
 
-        UpdatedTranslations translations ->
+        UpdatedLanguage language ->
             let
+                updatedTranslations =
+                    Translations.changeLanguage language sharedStatePayload.translations
+
                 updatedTacoPayload =
-                    { sharedStatePayload | translations = translations, showingLanguageButtons = not (getShowingLanguageButtons (Taco sharedStatePayload)) }
+                    { sharedStatePayload | translations = updatedTranslations, showingLanguageButtons = False }
             in
             Taco updatedTacoPayload
 

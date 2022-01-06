@@ -1,12 +1,14 @@
-module Styled exposing (ButtonVariant(..), addItemsWrapper, anchorExternal, anchorInternal, bodyWrapper, btn, centeredWrapper, changeLanguageButtonsWrapper, checkbox, externalLink, heroLogo, homeAnchor, inputOnInput, inputOnSubmit, internalLink, itemDiv, itemsWrapper, navbarLinksWrapper, navbarWrapper, notFoundPageWrapper, styledText, styledh1, styledh2, textDiv, timeWrapper, wrapper)
+module Styled exposing (ButtonVariant(..), Toast, ToastColor(..), addItemsWrapper, anchorExternal, anchorInternal, bodyWrapper, btn, centeredWrapper, changeLanguageButtonsWrapper, checkbox, customInputOnInput, externalLink, filterButton, heroLogo, homeAnchor, inputOnInput, inputOnSubmit, internalLink, itemDiv, itemsWrapper, navbarLinksWrapper, navbarWrapper, notFoundPageWrapper, styledText, styledh1, styledh2, textDiv, timeWrapper, toastStyles, wrapper,deleteHoverButton)
 
 import Css exposing (..)
-import Css.Animations as Animations
 import Css.Transitions as Transitions
+import Html
+import Html.Attributes
 import Html.Styled as HtmlStyled
 import Html.Styled.Attributes as Attributes
 import Html.Styled.Events as Events
 import Router
+import Toast
 
 
 type ButtonVariant
@@ -15,8 +17,19 @@ type ButtonVariant
     | GreySquare
     | BlueSquare
     | Grey
-    | Delete
+    | RedSquare
 
+
+type alias Toast =
+    { message : String
+    , color : ToastColor
+    }
+
+
+type ToastColor
+    = RedToast
+    | GreenToast
+    | DarkToast
 
 
 --- BASE STYLES ---
@@ -56,6 +69,16 @@ styledInput =
     ]
 
 
+squareButton : Color -> Color -> List Style
+squareButton bgColor hoverBgColor =
+    [ backgroundColor bgColor
+    , hover
+        [ backgroundColor hoverBgColor
+        ]
+    , colorTransition
+    ]
+
+
 
 --- TRANSITIONS ---
 
@@ -86,7 +109,7 @@ theme =
     , white = hex "#FFFFFF"
     , transparentWhite = hex "#FFFFFFCC"
     , blue = hex "#284560"
-    , itemsWrapperColor = hex "#868B8E"
+    , itemsWrapperColor = hex "#868B8EAA"
     , red = hex "#FC2E20"
     , redOrange = hex "#FF5C4D"
     , darkShadow = hex "#565857"
@@ -104,6 +127,8 @@ theme =
 btn : ButtonVariant -> msg -> List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
 btn variant msg =
     let
+        
+
         styles =
             [ borderStyle none
             , color theme.white
@@ -118,12 +143,7 @@ btn variant msg =
         variantStyles =
             case variant of
                 GreySquare ->
-                    [ backgroundColor theme.grey
-                    , hover
-                        [ backgroundColor theme.black
-                        ]
-                    , colorTransition
-                    ]
+                    squareButton theme.grey theme.black
 
                 Grey ->
                     [ backgroundColor theme.grey
@@ -135,12 +155,10 @@ btn variant msg =
                     ]
 
                 BlueSquare ->
-                    [ backgroundColor theme.blue
-                    , hover
-                        [ backgroundColor theme.black
-                        ]
-                    , colorTransition
-                    ]
+                    squareButton theme.blue theme.black
+
+                RedSquare ->
+                    squareButton theme.red theme.black
 
                 Blue ->
                     [ backgroundColor theme.blue
@@ -165,22 +183,67 @@ btn variant msg =
                         ]
                     , fontTransition
                     ]
+        
+    in
+    HtmlStyled.button
+        [ Attributes.css <| styles ++ variantStyles
+        , Events.onClick msg
+        ]
 
-                Delete ->
-                    [ --  width (rem 1)
-                      -- , height (rem 1)
-                      margin (rem 0)
+deleteHoverButton : msg -> List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
+deleteHoverButton msg =
+    HtmlStyled.button  
+        [Attributes.css[ borderStyle none
+            , textTransform uppercase
+            , fontFamilies [ "Courier New" ]
+            , cursor pointer
+           , margin (rem 0)
+           , borderStyle none
                     , padding2 (rem 0.5) (rem 0.7)
                     , fontSize (rem 1)
                     , backgroundColor theme.black
                     , color theme.white
                     , position absolute
                     , right (rem 1)
-                    , alignSelf center
-                    ]
+                    , top (rem 0.6)
+
+            
+            ]
+        , Attributes.class "displayOnParentHover"
+        ,Events.onClick msg   
+             ]
+    
+
+filterButton : Bool -> msg -> List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
+filterButton isSelected msg =
+    let
+        styles =
+            [ margin4 (rem 0) (rem 1) (rem 1) (rem 1)
+            , padding2 (rem 0.5) (rem 0.7)
+            , fontSize (rem 1)
+            , textTransform uppercase
+            , right (rem 1)
+            , top (rem 0.6)
+            , cursor pointer
+            ]
+
+        selectedStyles =
+            if isSelected then
+                [ backgroundColor theme.white
+                , color theme.black
+                ]
+
+            else
+                [ backgroundColor theme.blue
+                , color theme.white
+                , hover [
+                    backgroundColor theme.black
+                ]
+                , colorTransition
+                ]
     in
     HtmlStyled.button
-        [ Attributes.css <| styles ++ variantStyles
+        [ Attributes.css <| styles ++ selectedStyles
         , Events.onClick msg
         ]
 
@@ -285,6 +348,16 @@ styledText =
 
 
 --- INPUTS ---
+-- TODO: merge customInputOnInput & inputOnIn§put and refactor!!
+
+
+customInputOnInput : List (HtmlStyled.Attribute msg) -> List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
+customInputOnInput attributes =
+    HtmlStyled.input
+        (List.append
+            [ Attributes.css styledInput ]
+            attributes
+        )
 
 
 inputOnInput : (String -> msg) -> String -> String -> List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
@@ -484,8 +557,8 @@ textDiv =
         ]
 
 
-itemDiv : msg -> List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
-itemDiv msg =
+itemDiv : List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
+itemDiv =
     HtmlStyled.div
         [ Attributes.css
             [ displayFlex
@@ -496,8 +569,6 @@ itemDiv msg =
             , position relative
             , borderRadius (rem 1)
             ]
-        , Events.onMouseEnter msg
-        , Events.onMouseLeave msg
         ]
 
 
@@ -506,7 +577,7 @@ itemsWrapper =
     HtmlStyled.div
         [ Attributes.css
             [ displayFlex
-            , marginTop (rem 3)
+            , marginTop (rem 4.5)
             , marginBottom (rem 3)
             , justifyContent center
             , alignItems left
@@ -517,3 +588,37 @@ itemsWrapper =
             , boxShadow4 (rem -0.5) (rem 0.8) (rem 0.5) theme.lightShadow
             ]
         ]
+
+
+
+--- TOASTS ---
+
+
+toastStyles : Toast.Info Toast -> List (Html.Attribute msg)
+toastStyles toast =
+    let
+        background : Html.Attribute msg
+        background =
+            case toast.content.color of
+                RedToast ->
+                    Html.Attributes.style "background" "#da3125"
+
+                GreenToast ->
+                    Html.Attributes.style "background" "#1f9724"
+
+                DarkToast ->
+                    Html.Attributes.style "background" "#000000"
+    in
+    [ background
+    , Html.Attributes.style "width" "20rem"
+    , Html.Attributes.style "text-transform" "uppercase"
+    , Html.Attributes.style "font-size" "1rem"
+    , Html.Attributes.style "padding" "1rem"
+    , Html.Attributes.style "color" "white"
+    , Html.Attributes.style "position" "absolute"
+    , Html.Attributes.style "margin-left" "auto"
+    , Html.Attributes.style "margin-right" "auto"
+    , Html.Attributes.style "left" "0"
+    , Html.Attributes.style "right" "0"
+    , Html.Attributes.class "toast-fade-out"
+    ]

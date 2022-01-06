@@ -178,8 +178,8 @@ update msg model =
 
         ( HeaderMsg subMsg, Ready readyModel page ) ->
             let
-                ( pageCmd, sharedStateMsg ) =
-                    Header.update subMsg readyModel.sharedState
+                ( headerCmd, sharedStateMsg ) =
+                    Header.update subMsg
 
                 updatedTaco =
                     Taco.update sharedStateMsg readyModel.sharedState
@@ -187,7 +187,7 @@ update msg model =
                 updatedReadyModel =
                     { readyModel | sharedState = updatedTaco }
             in
-            ( Ready updatedReadyModel page, Cmd.map HeaderMsg pageCmd )
+            ( Ready updatedReadyModel page, Cmd.map HeaderMsg headerCmd )
 
         ( TacoMsg subMsg, Ready readyModel page ) ->
             let
@@ -223,11 +223,25 @@ update msg model =
             ( Ready updatedModel page, Cmd.none )
 
         ---- THESE TWO ARE PROBABLY NOT EXACTLY CORRECT BUT IT FINALLY WORKS! ---
-        ( Tick _, Ready readyModel page ) ->
-            ( Ready readyModel page, Cmd.map TacoMsg (Task.perform Taco.UpdatedTime Time.now) )
+        ( Tick time, Ready readyModel page ) ->
+            let
+                updatedTaco =
+                    Taco.update (Taco.UpdatedTime time) readyModel.sharedState
 
-        ( AdjustedTimeZone _, Ready readyModel page ) ->
-            ( Ready readyModel page, Cmd.map TacoMsg (Task.perform Taco.UpdatedZone Time.here) )
+                updatedReadyModel =
+                    { readyModel | sharedState = updatedTaco }
+            in
+            ( Ready updatedReadyModel page, Cmd.none )
+
+        ( AdjustedTimeZone zone, Ready readyModel page ) ->
+            let
+                updatedTaco =
+                    Taco.update (Taco.UpdatedZone zone) readyModel.sharedState
+
+                updatedReadyModel =
+                    { readyModel | sharedState = updatedTaco }
+            in
+            ( Ready updatedReadyModel page, Cmd.none )
 
         _ ->
             ( model

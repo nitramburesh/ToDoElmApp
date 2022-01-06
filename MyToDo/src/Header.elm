@@ -17,15 +17,11 @@ type Msg
     | ClickedShowLanguageButtons Bool
 
 
-update : Msg -> Taco.Taco -> ( Cmd Msg, Taco.Msg )
-update msg sharedState =
+update : Msg -> ( Cmd Msg, Taco.Msg )
+update msg  =
     case msg of
-        ChangedLanguage translations ->
-            let
-                updatedTranslations =
-                    Translations.changeLanguage translations (Taco.getTranslations sharedState)
-            in
-            ( Cmd.none, Taco.UpdatedTranslations updatedTranslations )
+        ChangedLanguage language ->
+            ( Cmd.none, Taco.UpdatedLanguage language )
 
         ClickedShowLanguageButtons bool ->
             ( Cmd.none, Taco.UpdatedShowingTranslationsButton bool )

@@ -8,7 +8,9 @@
     "loadItems": "загружать предметы",
     "english" : "английский",
     "russian" : "русский",
-    "language" : "язык"
+    "language" : "язык",
+    "deleteAllItems" : "удалить все элементы",
+    "deleteItem" : "удалить"
   },
   "text": {
     "welcomeHeading": "Добро пожаловать в: TO DO APP 3000!",
@@ -19,6 +21,7 @@
   },
   "placeholders": {
     "searchItems": "поиск предметов...",
-    "insertToken": "вставьте свой токен..."
+    "insertToken": "вставьте свой токен...",
+    "addItem": "добавить что-то сделать..."
   }
 }
