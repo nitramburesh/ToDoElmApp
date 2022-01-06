@@ -17,6 +17,7 @@
             "elm/url": "1.0.0",
             "elm/virtual-dom": "1.0.2",
             "elm-community/json-extra": "4.3.0",
+            "emilianobovetti/elm-toast": "1.0.1",
             "krisajenkins/remotedata": "6.0.1",
             "rtfeldman/elm-css": "17.0.1"
         },

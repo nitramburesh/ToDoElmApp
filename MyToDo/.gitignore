@@ -1,5 +1,6 @@
 # Distribution
 build/
+dist/
 
 # elm-package generated files
 elm-stuff
@@ -15,3 +16,4 @@ node_modules
 
 # .env file
 .env
+.parcel-cache

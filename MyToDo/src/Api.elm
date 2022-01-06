@@ -1,4 +1,4 @@
-module Api exposing (Api, get, init, setAccessToken)
+module Api exposing (Api, get, init, setAccessToken, getAccessToken)
 
 import Http
 import Json.Decode as Decode
@@ -32,6 +32,11 @@ setAccessToken token (Api { baseApiUrl }) =
             { baseApiUrl = baseApiUrl, accessToken = token }
     in
     Api updatedPayload
+
+
+getAccessToken : Api -> String
+getAccessToken (Api { accessToken }) =
+    accessToken
 
 
 get : Decode.Decoder a -> (RemoteData.WebData a -> msg) -> String -> Api -> Cmd msg
