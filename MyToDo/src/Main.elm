@@ -13,6 +13,7 @@ import Pages.ToDoItemPage as ToDoItemPage
 import Router
 import Styled
 import Taco
+import Task
 import Time
 import ToDoItems as Items
 import Translations
@@ -54,19 +55,7 @@ type Page
 
 
 
----- UPDATE ----
-
-
-type Msg
-    = ToDoItemPageMsg ToDoItemPage.Msg
-    | NextPageMsg ToDoItemPage.Msg
-    | HeaderMsg Header.Msg
-    | LinkClicked Browser.UrlRequest
-    | UrlChanged Url.Url
-    | Redirect Router.Route
-    | ChangedLanguage Translations.Language
-    | ClickedShowLanguageButtons Bool
-    | Tick Time.Posix
+--- INIT ---
 
 
 init : RawFlags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -79,7 +68,7 @@ init rawFlags url key =
 
                 readyModel =
                     { flags = flags
-                    , sharedState = Taco.init flags.translations api key (Time.millisToPosix 0)
+                    , sharedState = Taco.init flags.translations api key (Time.millisToPosix 0) Time.utc
                     , showingTranslations = False
                     }
 
@@ -87,9 +76,18 @@ init rawFlags url key =
                     url
                         |> Router.parseUrl
                         |> routeToPage readyModel
+
+                getTimeZone =
+                    Task.perform AdjustedTimeZone Time.here
+
+                getCurrentTime =
+                    Task.perform Tick Time.now
+
+                allCmds =
+                    Cmd.batch [ pageCmd, getTimeZone, getCurrentTime ]
             in
             ( Ready readyModel page
-            , pageCmd
+            , allCmds
             )
 
         Err _ ->
@@ -98,53 +96,22 @@ init rawFlags url key =
             )
 
 
-decodeFlags : Decode.Decoder Flags
-decodeFlags =
-    Decode.succeed Flags
-        |> Pipeline.required "baseApiUrl" Decode.string
-        |> Pipeline.optional "toDoItems" Items.decodeToDoItems Items.initialToDoItems
-        |> Pipeline.required "accessToken" Decode.string
-        |> Pipeline.required "translations" Translations.decode
+
+---- UPDATE ----
 
 
-routeToPage : ReadyModel -> Maybe Router.Route -> ( Page, Cmd Msg )
-routeToPage { sharedState, flags } route =
-    case route of
-        Just Router.ToDoItemRoute ->
-            let
-                ( toDoItemPageModel, toDoItemPageCmd ) =
-                    ToDoItemPage.init flags.toDoItems
-            in
-            ( ToDoItemPage toDoItemPageModel
-            , Cmd.map ToDoItemPageMsg toDoItemPageCmd
-            )
-
-        Just Router.NextPageRoute ->
-            let
-                ( nextPageModel, nextPageCmd ) =
-                    ToDoItemPage.init flags.toDoItems
-            in
-            ( NextPage nextPageModel
-            , Cmd.map NextPageMsg nextPageCmd
-            )
-
-        Nothing ->
-            let
-                ( toDoItemPageModel, _ ) =
-                    ToDoItemPage.init flags.toDoItems
-            in
-            ( ToDoItemPage toDoItemPageModel
-            , Nav.replaceUrl (Taco.getKey sharedState) <| Router.routeToString Router.ToDoItemRoute
-            )
-
-
-redirect : ReadyModel -> Router.Route -> Cmd Msg
-redirect { sharedState } route =
-    let
-        routeString =
-            Router.routeToString route
-    in
-    Nav.replaceUrl (Taco.getKey sharedState) routeString
+type Msg
+    = ToDoItemPageMsg ToDoItemPage.Msg
+    | NextPageMsg ToDoItemPage.Msg
+    | HeaderMsg Header.Msg
+    | TacoMsg Taco.Msg
+    | LinkClicked Browser.UrlRequest
+    | UrlChanged Url.Url
+    | Redirect Router.Route
+    | ChangedLanguage Translations.Language
+    | ClickedShowLanguageButtons Bool
+    | Tick Time.Posix
+    | AdjustedTimeZone Time.Zone
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -211,8 +178,8 @@ update msg model =
 
         ( HeaderMsg subMsg, Ready readyModel page ) ->
             let
-                ( pageCmd, sharedStateMsg ) =
-                    Header.update subMsg readyModel.sharedState
+                ( headerCmd, sharedStateMsg ) =
+                    Header.update subMsg
 
                 updatedTaco =
                     Taco.update sharedStateMsg readyModel.sharedState
@@ -220,10 +187,20 @@ update msg model =
                 updatedReadyModel =
                     { readyModel | sharedState = updatedTaco }
             in
-            ( Ready updatedReadyModel page, Cmd.map HeaderMsg pageCmd )
+            ( Ready updatedReadyModel page, Cmd.map HeaderMsg headerCmd )
+
+        ( TacoMsg subMsg, Ready readyModel page ) ->
+            let
+                updatedTaco =
+                    Taco.update subMsg readyModel.sharedState
+
+                updatedReadyModel =
+                    { readyModel | sharedState = updatedTaco }
+            in
+            ( Ready updatedReadyModel page, Cmd.none )
 
         ( Redirect route, Ready readyModel _ ) ->
-            ( model, redirect readyModel route )
+            ( model, Router.redirect readyModel.sharedState route )
 
         ( ChangedLanguage language, Ready readyModel page ) ->
             let
@@ -245,15 +222,26 @@ update msg model =
             in
             ( Ready updatedModel page, Cmd.none )
 
-        ( Tick currentTime, Ready readyModel page ) ->
+        ---- THESE TWO ARE PROBABLY NOT EXACTLY CORRECT BUT IT FINALLY WORKS! ---
+        ( Tick time, Ready readyModel page ) ->
             let
                 updatedTaco =
-                    Taco.updateTime readyModel.sharedState currentTime
+                    Taco.update (Taco.UpdatedTime time) readyModel.sharedState
 
-                updatedModel =
+                updatedReadyModel =
                     { readyModel | sharedState = updatedTaco }
             in
-            ( Ready updatedModel page, Cmd.none )
+            ( Ready updatedReadyModel page, Cmd.none )
+
+        ( AdjustedTimeZone zone, Ready readyModel page ) ->
+            let
+                updatedTaco =
+                    Taco.update (Taco.UpdatedZone zone) readyModel.sharedState
+
+                updatedReadyModel =
+                    { readyModel | sharedState = updatedTaco }
+            in
+            ( Ready updatedReadyModel page, Cmd.none )
 
         _ ->
             ( model
@@ -262,12 +250,52 @@ update msg model =
 
 
 
+--- HELPER FUNCTIONS ---
+
+
+decodeFlags : Decode.Decoder Flags
+decodeFlags =
+    Decode.succeed Flags
+        |> Pipeline.required "baseApiUrl" Decode.string
+        |> Pipeline.optional "toDoItems" Items.decodeToDoItems Items.initialToDoItems
+        |> Pipeline.required "accessToken" Decode.string
+        |> Pipeline.required "translations" Translations.decode
+
+
+routeToPage : ReadyModel -> Maybe Router.Route -> ( Page, Cmd Msg )
+routeToPage { sharedState, flags } route =
+    case route of
+        Just Router.ToDoItemRoute ->
+            let
+                ( toDoItemPageModel, toDoItemPageCmd ) =
+                    ToDoItemPage.init flags.toDoItems
+            in
+            ( ToDoItemPage toDoItemPageModel
+            , Cmd.map ToDoItemPageMsg toDoItemPageCmd
+            )
+
+        Just Router.NextPageRoute ->
+            let
+                ( nextPageModel, nextPageCmd ) =
+                    ToDoItemPage.init flags.toDoItems
+            in
+            ( NextPage nextPageModel
+            , Cmd.map NextPageMsg nextPageCmd
+            )
+
+        Nothing ->
+            ( NotFoundPage
+            , Nav.replaceUrl (Taco.getKey sharedState) "/notfoundpage"
+            )
+
+
+
 ---- VIEW ----
 
 
 headerView : ReadyModel -> HtmlStyled.Html Msg
-headerView readyModel =
-    Header.navigationHeaderView readyModel.sharedState
+headerView { sharedState } =
+    Header.view sharedState
         |> HtmlStyled.map HeaderMsg
 
 
@@ -283,7 +311,7 @@ pageView page { sharedState } =
                 |> HtmlStyled.map NextPageMsg
 
         NotFoundPage ->
-            NotFoundPage.view
+            NotFoundPage.view sharedState
 
 
 view : Model -> Browser.Document Msg
@@ -321,7 +349,7 @@ view model =
                 NotFoundPage ->
                     { title = "Page Not Found..."
                     , body =
-                        [ [ NotFoundPage.view
+                        [ [ NotFoundPage.view readyModel.sharedState
                           ]
                             |> Styled.wrapper
                             |> HtmlStyled.toUnstyled
@@ -335,31 +363,6 @@ view model =
                     |> HtmlStyled.toUnstyled
                 ]
             }
-
-
-externalRouteToString : ExternalRoute -> String
-externalRouteToString route =
-    case route of
-        SeznamRoute ->
-            "https://www.seznam.cz/"
-
-        YoutubeRoute ->
-            "https://www.youtube.com/"
-
-        GoogleRoute ->
-            "https://www.google.com/"
-
-        RedditRoute ->
-            "https://www.reddit.com/"
-
-
-toExternalRoute : ExternalRoute -> Browser.UrlRequest
-toExternalRoute externalRoute =
-    let
-        route =
-            externalRouteToString externalRoute
-    in
-    Browser.External route
 
 
 navigationHeaderView : ReadyModel -> HtmlStyled.Html Msg
@@ -376,7 +379,7 @@ navigationHeaderView model =
             (Redirect Router.ToDoItemRoute)
             [ HtmlStyled.text (t "buttons.home") ]
         , Styled.btn Styled.Basic
-            (LinkClicked (toExternalRoute GoogleRoute))
+            (LinkClicked (Router.toExternalRoute Router.GoogleRoute))
             [ HtmlStyled.text (t "buttons.google") ]
         , translationButtonsView model
         ]
@@ -406,16 +409,8 @@ translationButtonsView { sharedState, showingTranslations } =
             ]
 
 
-seznamRoute : String
-seznamRoute =
-    "https://www.seznam.cz/"
 
-
-type ExternalRoute
-    = SeznamRoute
-    | YoutubeRoute
-    | GoogleRoute
-    | RedditRoute
+--- SUBSCRIPTIONS ---
 
 
 subscriptions : Model -> Sub Msg

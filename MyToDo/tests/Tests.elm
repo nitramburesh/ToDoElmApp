@@ -19,4 +19,7 @@ all =
         , test "This test should fail" <|
             \_ ->
                 Expect.fail "failed as expected!"
+        , test "testing a test" <|
+            \_ -> 
+                Expect.equal 
         ]

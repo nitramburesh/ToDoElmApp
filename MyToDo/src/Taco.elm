@@ -1,4 +1,4 @@
-module Taco exposing (Msg(..), Taco, getApi, getKey, getShowingLanguageButtons, getTranslations, init, update, updateApi, updateLanguageButtons, updateTranslations, updateTime, getTime)
+module Taco exposing (Msg(..), Taco, getApi, getKey, getShowingLanguageButtons, getTime, getTranslations, getZone, init, update, updateTranslations)
 
 import Api
 import Browser.Navigation as Nav
@@ -16,20 +16,38 @@ type alias TacoPayload =
     , key : Nav.Key
     , showingLanguageButtons : Bool
     , currentTime : Time.Posix
+    , timeZone : Time.Zone
     }
 
 
 type Msg
     = NoUpdate
     | SetAccessToken String
-    | UpdatedTranslations Translations.Model
+    | UpdatedLanguage Translations.Language
     | UpdatedApi Api.Api
     | UpdatedShowingTranslationsButton Bool
     | UpdatedTime Time.Posix
+    | UpdatedZone Time.Zone
 
 
 
--- change language
+--- INIT ---
+
+
+init : Translations.Model -> Api.Api -> Nav.Key -> Time.Posix -> Time.Zone -> Taco
+init translations api key currentTime timeZone =
+    Taco
+        { translations = translations
+        , api = api
+        , key = key
+        , showingLanguageButtons = False
+        , currentTime = currentTime
+        , timeZone = timeZone
+        }
+
+
+
+--- UPDATE MESSAGES ---
 
 
 update : Msg -> Taco -> Taco
@@ -48,10 +66,13 @@ update msg (Taco sharedStatePayload) =
             in
             Taco updatedTacoPayload
 
-        UpdatedTranslations translations ->
+        UpdatedLanguage language ->
             let
+                updatedTranslations =
+                    Translations.changeLanguage language sharedStatePayload.translations
+
                 updatedTacoPayload =
-                    { sharedStatePayload | translations = translations, showingLanguageButtons = not (getShowingLanguageButtons (Taco sharedStatePayload)) }
+                    { sharedStatePayload | translations = updatedTranslations, showingLanguageButtons = False }
             in
             Taco updatedTacoPayload
 
@@ -65,16 +86,29 @@ update msg (Taco sharedStatePayload) =
         UpdatedShowingTranslationsButton showingLanguageButtons ->
             let
                 updatedTacoPayload =
-                    {sharedStatePayload | showingLanguageButtons = not showingLanguageButtons}
-            in    
-                Taco updatedTacoPayload
+                    { sharedStatePayload | showingLanguageButtons = not showingLanguageButtons }
+            in
+            Taco updatedTacoPayload
 
         UpdatedTime currentTime ->
-            let 
-                updatedTacoPayload = 
-                    {sharedStatePayload | currentTime = currentTime}
+            let
+                updatedTacoPayload =
+                    { sharedStatePayload | currentTime = currentTime }
             in
-                Taco updatedTacoPayload
+            Taco updatedTacoPayload
+
+        UpdatedZone timeZone ->
+            let
+                updatedTacoPayload =
+                    { sharedStatePayload | timeZone = timeZone }
+            in
+            Taco updatedTacoPayload
+
+
+
+--- GETTERS ---
+
+
 getKey : Taco -> Nav.Key
 getKey (Taco { key }) =
     key
@@ -95,37 +129,20 @@ getShowingLanguageButtons (Taco { showingLanguageButtons }) =
     showingLanguageButtons
 
 
-init : Translations.Model -> Api.Api -> Nav.Key -> Time.Posix -> Taco
-init translations api key currentTime =
-    Taco
-        { translations = translations
-        , api = api
-        , key = key
-        , showingLanguageButtons = False
-        , currentTime = currentTime
-        }
-
-
-
 getTime : Taco -> Time.Posix
 getTime (Taco { currentTime }) =
     currentTime
 
-updateTime : Taco -> Time.Posix -> Taco
-updateTime (Taco sharedState) time =
-    Taco { sharedState | currentTime = time }
+
+getZone : Taco -> Time.Zone
+getZone (Taco { timeZone }) =
+    timeZone
+
+
+
+--- SETTERS ---
 
 
 updateTranslations : Taco -> Translations.Model -> Taco
 updateTranslations (Taco sharedState) translations =
     Taco { sharedState | translations = translations }
-
-
-updateApi : Taco -> Api.Api -> Taco
-updateApi (Taco sharedState) api =
-    Taco { sharedState | api = api }
-
-
-updateLanguageButtons : Taco -> Bool -> Taco
-updateLanguageButtons (Taco sharedState) showingLanguageButtons =
-    Taco { sharedState | showingLanguageButtons = showingLanguageButtons }

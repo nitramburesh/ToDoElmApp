@@ -1,4 +1,4 @@
-module Header exposing (Msg, navigationHeaderView, update)
+module Header exposing (Msg, update, view)
 
 import Html.Styled as HtmlStyled
 import Router
@@ -8,27 +8,31 @@ import TimeModule
 import Translations
 
 
+
+--- UPDATE ---
+
+
 type Msg
     = ChangedLanguage Translations.Language
     | ClickedShowLanguageButtons Bool
 
 
-update : Msg -> Taco.Taco -> ( Cmd Msg, Taco.Msg )
-update msg sharedState =
+update : Msg -> ( Cmd Msg, Taco.Msg )
+update msg  =
     case msg of
-        ChangedLanguage translations ->
-            let
-                updatedTranslations =
-                    Translations.changeLanguage translations (Taco.getTranslations sharedState)
-            in
-            ( Cmd.none, Taco.UpdatedTranslations updatedTranslations )
+        ChangedLanguage language ->
+            ( Cmd.none, Taco.UpdatedLanguage language )
 
         ClickedShowLanguageButtons bool ->
             ( Cmd.none, Taco.UpdatedShowingTranslationsButton bool )
 
 
-navigationHeaderView : Taco.Taco -> HtmlStyled.Html Msg
-navigationHeaderView sharedState =
+
+--- VIEW ---
+
+
+view : Taco.Taco -> HtmlStyled.Html Msg
+view sharedState =
     let
         { t } =
             Translations.translators (Taco.getTranslations sharedState)

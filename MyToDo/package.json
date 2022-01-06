@@ -11,10 +11,11 @@
     "prettier": "^2.4.1"
   },
   "scripts": {
+    "3000": "npx elm-app start",
     "start": "parcel public/index.html",
     "build": "parcel build/index.html --dist-dir build",
-    "elm start": "npx elm-app start",
-    "elm analyse": "npx elm-analyse -s -p 50000"
+    "analyse": "npx elm-analyse -s -p 50000",
+    "test" : "npx elm-test"
   },
   "dependencies": {
     "elm-live": "^4.0.2"

@@ -12,7 +12,7 @@ const initMainApp = () => {
   const flags = {
     baseApiUrl: ELM_APP_BASE_API_URL,
     toDoItems: JSON.parse(localStorage.getItem("to-do-items")),
-    accessToken: "accessToken",
+    accessToken: "",
     translations: { en, ru },
   };
   const app = Elm.Main.init({

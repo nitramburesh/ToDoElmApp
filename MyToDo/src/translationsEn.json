@@ -5,10 +5,12 @@
     "google": "google",
     "showList": "show list",
     "hideList": "Hide List",
-    "initialState": "initial state",
+    "loadItems": "load items",
     "english" : "english",
     "russian" : "russian",
-    "language" : "language"
+    "language" : "language",
+    "deleteAllItems" : "delete all items",
+    "deleteItem" : "delete"
   },
   "text": {
     "welcomeHeading": "WELCOME TO: TO DO APP 3000!",
@@ -19,6 +21,7 @@
   },
   "placeholders": {
     "searchItems": "search items...",
-    "insertToken": "insert your token..."
+    "insertToken": "insert your token...",
+    "addItem": "add item..."
   }
 }
