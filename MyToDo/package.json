@@ -16,6 +16,7 @@
     "build": "npx parcel public/index.html"
   },
   "dependencies": {
+    "@parcel/transformer-elm": "^2.1.1",
     "@parcel/transformer-webmanifest": "^2.1.1",
     "elm-live": "^4.0.2"
   }
