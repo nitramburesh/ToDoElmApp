@@ -2,7 +2,6 @@
   "devDependencies": {
     "@parcel/packager-raw-url": "^2.1.1-nightly.2593",
     "@parcel/transformer-elm": "^2.1.1-nightly.2593",
-    "@parcel/transformer-webmanifest": "^2.1.1",
     "elm": "^0.19.1-5",
     "elm-analyse": "^0.16.5",
     "elm-format": "^0.8.5",
