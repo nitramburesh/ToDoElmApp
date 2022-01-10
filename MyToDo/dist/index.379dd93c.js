@@ -11881,6 +11881,19 @@ type alias Process =
     };
     var $rtfeldman$elm_css$VirtualDom$Styled$unstyledNode = $rtfeldman$elm_css$VirtualDom$Styled$Unstyled;
     var $rtfeldman$elm_css$Html$Styled$fromUnstyled = $rtfeldman$elm_css$VirtualDom$Styled$unstyledNode;
+    var $rtfeldman$elm_css$Html$Styled$img = $rtfeldman$elm_css$Html$Styled$node('img');
+    var $rtfeldman$elm_css$Html$Styled$Attributes$src = function(url) {
+        return A2($rtfeldman$elm_css$Html$Styled$Attributes$stringProperty, 'src', url);
+    };
+    var $author$project$Styled$heroLogo = function(imgSource) {
+        return $rtfeldman$elm_css$Html$Styled$img(_List_fromArray([
+            $rtfeldman$elm_css$Html$Styled$Attributes$src(imgSource),
+            $rtfeldman$elm_css$Html$Styled$Attributes$css(_List_fromArray([
+                $rtfeldman$elm_css$Css$width($rtfeldman$elm_css$Css$rem(20)),
+                $rtfeldman$elm_css$Css$margin($rtfeldman$elm_css$Css$rem(0))
+            ]))
+        ]));
+    };
     var $rtfeldman$elm_css$Css$left = $rtfeldman$elm_css$Css$prop1('left');
     var $author$project$Styled$itemsWrapper = $rtfeldman$elm_css$Html$Styled$div(_List_fromArray([
         $rtfeldman$elm_css$Html$Styled$Attributes$css(_List_fromArray([
@@ -12388,6 +12401,7 @@ type alias Process =
                 $author$project$Styled$styledh1(_List_fromArray([
                     $rtfeldman$elm_css$Html$Styled$text(t('text.welcomeHeading'))
                 ])),
+                A2($author$project$Styled$heroLogo, '/logo.png', _List_Nil),
                 $author$project$Pages$ToDoItemPage$setAccessTokenView(sharedState)
             ])),
             A3($author$project$Styled$btn, $author$project$Styled$BlueSquare, $author$project$Pages$ToDoItemPage$ToggledToDoList, _List_fromArray([
