@@ -529,8 +529,7 @@ var _translationsRuJson = require("./translationsRu.json");
 var _translationsRuJsonDefault = parcelHelpers.interopDefault(_translationsRuJson);
 const initMainApp = ()=>{
     const node = document.getElementById("root");
-    const ELM_APP_BASE_API_URL = {
-    };
+    const ELM_APP_BASE_API_URL = "https://jsonplaceholder.typicode.com/";
     const flags = {
         baseApiUrl: ELM_APP_BASE_API_URL,
         toDoItems: JSON.parse(localStorage.getItem("to-do-items")),
