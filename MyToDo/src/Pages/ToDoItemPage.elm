@@ -18,6 +18,7 @@ import Translations
 
 
 
+
 --- MODEL ---
 
 
@@ -491,7 +492,7 @@ view (ModelInternal model) sharedState =
     HtmlStyled.div []
         [ Styled.centeredWrapper
             [ Styled.styledh1 [ HtmlStyled.text (t "text.welcomeHeading") ]
-            , Styled.heroLogo "/logo.png" []
+            -- , Styled.heroLogo "/logo.png" []
             , setAccessTokenView sharedState
             ]
         , Styled.btn Styled.BlueSquare ToggledToDoList [ HtmlStyled.text (buttonTitle model sharedState) ]
