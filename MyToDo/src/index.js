@@ -7,10 +7,8 @@ import ru from "./translationsRu.json";
 const initMainApp = () => {
   const node = document.getElementById("root");
 
-  const {ELM_APP_BASE_API_URL} = process.env;
-
   const flags = {
-    baseApiUrl: ELM_APP_BASE_API_URL,
+    baseApiUrl: process.env.ELM_APP_BASE_API_URL,
     toDoItems: JSON.parse(localStorage.getItem("to-do-items")),
     accessToken: "",
     translations: { en, ru },

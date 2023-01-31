@@ -1,4 +1,4 @@
-module Api exposing (Api, get, init, setAccessToken, getAccessToken)
+module Api exposing (Api, get, getAccessToken, init, setAccessToken)
 
 import Http
 import Json.Decode as Decode

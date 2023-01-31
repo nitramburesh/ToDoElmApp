@@ -15,10 +15,10 @@
     "analyse": "npx elm-analyse -s -p 50000",
     "test": "npx elm-test",
     "build": "npx parcel build public/index.html --dist-dir build",
-    "start" : "npx parcel public/index.html"
-
+    "start": "npx parcel public/index.html"
   },
   "dependencies": {
+    "dotenv": "^16.0.3",
     "elm-live": "^4.0.2"
   }
 }
