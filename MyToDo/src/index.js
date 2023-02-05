@@ -8,10 +8,11 @@ const initMainApp = () => {
   const node = document.getElementById("root");
 
   const flags = {
-    baseApiUrl: process.env.ELM_APP_BASE_API_URL,
+    baseApiUrl: "https://jsonplaceholder.typicode.com/",
     toDoItems: JSON.parse(localStorage.getItem("to-do-items")),
     accessToken: "",
     translations: { en, ru },
+    appWidth: window.innerWidth
   };
   const app = Elm.Main.init({
     node,

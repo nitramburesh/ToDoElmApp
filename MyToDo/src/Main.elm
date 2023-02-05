@@ -2,12 +2,14 @@ module Main exposing (..)
 
 import Api
 import Browser
+import Browser.Events
 import Browser.Navigation as Nav
 import Header
 import Html.Styled as HtmlStyled
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Pipeline
 import Json.Encode as Encode
+import Pages.Dashboard as Dashboard
 import Pages.NotFoundPage as NotFoundPage
 import Pages.ToDoItemPage as ToDoItemPage
 import Router
@@ -33,6 +35,7 @@ type alias Flags =
     , toDoItems : List Items.ToDoItem
     , accessToken : String
     , translations : Translations.Model
+    , appWidth : Int
     }
 
 
@@ -50,7 +53,7 @@ type alias ReadyModel =
 
 type Page
     = ToDoItemPage ToDoItemPage.Model
-    | NextPage ToDoItemPage.Model
+    | Dashboard ToDoItemPage.Model
     | NotFoundPage
 
 
@@ -68,7 +71,7 @@ init rawFlags url key =
 
                 readyModel =
                     { flags = flags
-                    , sharedState = Taco.init flags.translations api key (Time.millisToPosix 0) Time.utc
+                    , sharedState = Taco.init flags.translations api key (Time.millisToPosix 0) Time.utc flags.appWidth
                     , showingTranslations = False
                     }
 
@@ -102,7 +105,7 @@ init rawFlags url key =
 
 type Msg
     = ToDoItemPageMsg ToDoItemPage.Msg
-    | NextPageMsg ToDoItemPage.Msg
+    | DashboardMsg ToDoItemPage.Msg
     | HeaderMsg Header.Msg
     | TacoMsg Taco.Msg
     | LinkClicked Browser.UrlRequest
@@ -112,6 +115,7 @@ type Msg
     | ClickedShowLanguageButtons Bool
     | Tick Time.Posix
     | AdjustedTimeZone Time.Zone
+    | ChangedAppWidth Int Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -158,7 +162,7 @@ update msg model =
             , Cmd.map ToDoItemPageMsg pageCmd
             )
 
-        ( NextPageMsg subMsg, Ready readyModel (NextPage submodel) ) ->
+        ( DashboardMsg subMsg, Ready readyModel (Dashboard submodel) ) ->
             let
                 ( updatedPageModel, pageCmd, sharedStateMsg ) =
                     ToDoItemPage.update subMsg submodel readyModel.sharedState
@@ -167,13 +171,13 @@ update msg model =
                     Taco.update sharedStateMsg readyModel.sharedState
 
                 page =
-                    NextPage updatedPageModel
+                    Dashboard updatedPageModel
 
                 updatedReadyModel =
                     { readyModel | sharedState = updatedTaco }
             in
             ( Ready updatedReadyModel page
-            , Cmd.map NextPageMsg pageCmd
+            , Cmd.map DashboardMsg pageCmd
             )
 
         ( HeaderMsg subMsg, Ready readyModel page ) ->
@@ -243,10 +247,19 @@ update msg model =
             in
             ( Ready updatedReadyModel page, Cmd.none )
 
+        ( ChangedAppWidth width height, Ready readyModel page ) ->
+            let
+                updatedTaco =
+                    Taco.update (Taco.UpdatedAppWidth width height)
+                        readyModel.sharedState
+
+                updatedModel =
+                    { readyModel | sharedState = updatedTaco }
+            in
+            ( Ready updatedModel page, Cmd.none )
+
         _ ->
-            ( model
-            , Cmd.none
-            )
+            ( model, Cmd.none )
 
 
 
@@ -260,6 +273,7 @@ decodeFlags =
         |> Pipeline.optional "toDoItems" Items.decodeToDoItems Items.initialToDoItems
         |> Pipeline.required "accessToken" Decode.string
         |> Pipeline.required "translations" Translations.decode
+        |> Pipeline.required "appWidth" Decode.int
 
 
 routeToPage : ReadyModel -> Maybe Router.Route -> ( Page, Cmd Msg )
@@ -279,8 +293,8 @@ routeToPage { sharedState, flags } route =
                 ( nextPageModel, nextPageCmd ) =
                     ToDoItemPage.init flags.toDoItems
             in
-            ( NextPage nextPageModel
-            , Cmd.map NextPageMsg nextPageCmd
+            ( Dashboard nextPageModel
+            , Cmd.map DashboardMsg nextPageCmd
             )
 
         Nothing ->
@@ -306,9 +320,9 @@ pageView page { sharedState } =
             ToDoItemPage.view pageModel sharedState
                 |> HtmlStyled.map ToDoItemPageMsg
 
-        NextPage pageModel ->
-            ToDoItemPage.view pageModel sharedState
-                |> HtmlStyled.map NextPageMsg
+        Dashboard _ ->
+            Dashboard.view sharedState
+                |> HtmlStyled.map DashboardMsg
 
         NotFoundPage ->
             NotFoundPage.view sharedState
@@ -330,15 +344,10 @@ view model =
                         ]
                     }
 
-                NextPage _ ->
-                    let
-                        { t } =
-                            Translations.translators (Taco.getTranslations readyModel.sharedState)
-                    in
-                    { title = "Next Page"
+                Dashboard _ ->
+                    { title = "Dashboard"
                     , body =
                         [ [ headerView readyModel
-                          , Styled.styledh2 [ HtmlStyled.text (t "text.thisIsNextPage") ]
                           , pageView page readyModel
                           ]
                             |> HtmlStyled.div []
@@ -415,7 +424,10 @@ translationButtonsView { sharedState, showingTranslations } =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Time.every 1000 Tick
+    Sub.batch
+        [ Time.every 1000 Tick
+        , Browser.Events.onResize ChangedAppWidth
+        ]
 
 
 

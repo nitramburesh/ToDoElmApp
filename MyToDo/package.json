@@ -1,21 +1,16 @@
 {
   "devDependencies": {
-    "@parcel/packager-raw-url": "^2.1.1",
-    "@parcel/transformer-elm": "^2.1.1",
-    "@parcel/transformer-webmanifest": "^2.1.1",
     "elm": "^0.19.1-5",
     "elm-analyse": "^0.16.5",
     "elm-format": "^0.8.5",
     "elm-test": "^0.19.1-revision7",
-    "parcel": "^2.1.1",
-    "prettier": "^2.4.1"
+    "prettier": "^2.4.1",
+    "vite-plugin-elm": "^2.7.2"
   },
   "scripts": {
-    "3000": "npx elm-app start",
-    "analyse": "npx elm-analyse -s -p 50000",
-    "test": "npx elm-test",
-    "build": "npx parcel build public/index.html --dist-dir build",
-    "start": "npx parcel public/index.html"
+    "build": "vite build",
+    "dev": "vite serve --host localhost --port 1234",
+    "preview": "vite preview"
   },
   "dependencies": {
     "dotenv": "^16.0.3",

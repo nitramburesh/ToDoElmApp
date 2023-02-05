@@ -1,4 +1,4 @@
-module Taco exposing (Msg(..), Taco, getApi, getKey, getShowingLanguageButtons, getTime, getTranslations, getZone, init, update, updateTranslations)
+module Taco exposing (Msg(..), Taco, getApi, getAppWidth, getKey, getShowingLanguageButtons, getTime, getTranslations, getZone, init, update, updateTranslations)
 
 import Api
 import Browser.Navigation as Nav
@@ -17,6 +17,7 @@ type alias TacoPayload =
     , showingLanguageButtons : Bool
     , currentTime : Time.Posix
     , timeZone : Time.Zone
+    , appWidth : Int
     }
 
 
@@ -28,14 +29,15 @@ type Msg
     | UpdatedShowingTranslationsButton Bool
     | UpdatedTime Time.Posix
     | UpdatedZone Time.Zone
+    | UpdatedAppWidth Int Int
 
 
 
 --- INIT ---
 
 
-init : Translations.Model -> Api.Api -> Nav.Key -> Time.Posix -> Time.Zone -> Taco
-init translations api key currentTime timeZone =
+init : Translations.Model -> Api.Api -> Nav.Key -> Time.Posix -> Time.Zone -> Int -> Taco
+init translations api key currentTime timeZone appWidth =
     Taco
         { translations = translations
         , api = api
@@ -43,6 +45,7 @@ init translations api key currentTime timeZone =
         , showingLanguageButtons = False
         , currentTime = currentTime
         , timeZone = timeZone
+        , appWidth = appWidth
         }
 
 
@@ -104,6 +107,13 @@ update msg (Taco sharedStatePayload) =
             in
             Taco updatedTacoPayload
 
+        UpdatedAppWidth width _ ->
+            let
+                updatedTacoPayload =
+                    { sharedStatePayload | appWidth = width }
+            in
+            Taco updatedTacoPayload
+
 
 
 --- GETTERS ---
@@ -137,6 +147,11 @@ getTime (Taco { currentTime }) =
 getZone : Taco -> Time.Zone
 getZone (Taco { timeZone }) =
     timeZone
+
+
+getAppWidth : Taco -> Int
+getAppWidth (Taco { appWidth }) =
+    appWidth
 
 
 

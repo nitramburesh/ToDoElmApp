@@ -1,4 +1,4 @@
-module Styled exposing (ButtonVariant(..), Toast, ToastColor(..), addItemsWrapper, anchorExternal, anchorInternal, bodyWrapper, btn, centeredWrapper, changeLanguageButtonsWrapper, checkbox, customInputOnInput, externalLink, filterButton, heroLogo, homeAnchor, inputOnInput, inputOnSubmit, internalLink, itemDiv, itemsWrapper, navbarLinksWrapper, navbarWrapper, notFoundPageWrapper, styledText, styledh1, styledh2, textDiv, timeWrapper, toastStyles, wrapper,deleteHoverButton)
+module Styled exposing (ButtonVariant(..), Toast, ToastColor(..), addItemsWrapper, anchorExternal, anchorInternal, bodyWrapper, btn, centeredWrapper, changeLanguageButtonsWrapper, checkbox, customInputOnInput, dashboard, dashboardItem, deleteHoverButton, externalLink, filterButton, heroLogo, homeAnchor, inputOnInput, inputOnSubmit, internalLink, itemDiv, itemsWrapper, navbarLinksWrapper, navbarWrapper, notFoundPageWrapper, styledText, styledh1, styledh2, textDiv, timeWrapper, toastStyles, wrapper)
 
 import Css exposing (..)
 import Css.Transitions as Transitions
@@ -30,6 +30,7 @@ type ToastColor
     = RedToast
     | GreenToast
     | DarkToast
+
 
 
 --- BASE STYLES ---
@@ -127,8 +128,6 @@ theme =
 btn : ButtonVariant -> msg -> List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
 btn variant msg =
     let
-        
-
         styles =
             [ borderStyle none
             , color theme.white
@@ -183,36 +182,35 @@ btn variant msg =
                         ]
                     , fontTransition
                     ]
-        
     in
     HtmlStyled.button
         [ Attributes.css <| styles ++ variantStyles
         , Events.onClick msg
         ]
 
+
 deleteHoverButton : msg -> List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
 deleteHoverButton msg =
-    HtmlStyled.button  
-        [Attributes.css[ borderStyle none
+    HtmlStyled.button
+        [ Attributes.css
+            [ borderStyle none
             , textTransform uppercase
             , fontFamilies [ "Courier New" ]
             , cursor pointer
-           , margin (rem 0)
-           , borderStyle none
-                    , padding2 (rem 0.5) (rem 0.7)
-                    , fontSize (rem 1)
-                    , backgroundColor theme.black
-                    , color theme.white
-                    , position absolute
-                    , right (rem 1)
-                    , top (rem 0.6)
-
-            
+            , margin (rem 0)
+            , borderStyle none
+            , padding2 (rem 0.5) (rem 0.7)
+            , fontSize (rem 1)
+            , backgroundColor theme.black
+            , color theme.white
+            , position absolute
+            , right (rem 1)
+            , top (rem 0.6)
             ]
         , Attributes.class "displayOnParentHover"
-        ,Events.onClick msg   
-             ]
-    
+        , Events.onClick msg
+        ]
+
 
 filterButton : Bool -> msg -> List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
 filterButton isSelected msg =
@@ -236,9 +234,9 @@ filterButton isSelected msg =
             else
                 [ backgroundColor theme.blue
                 , color theme.white
-                , hover [
-                    backgroundColor theme.black
-                ]
+                , hover
+                    [ backgroundColor theme.black
+                    ]
                 , colorTransition
                 ]
     in
@@ -542,6 +540,20 @@ changeLanguageButtonsWrapper =
         ]
 
 
+dashboard : List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
+dashboard =
+    HtmlStyled.div
+        [ Attributes.css
+            [ displayFlex
+            , justifyContent center
+            , flexDirection column
+            , backgroundColor theme.black
+            , padding2 (px 0) (px 20)
+            , borderRadius (px 12)
+            ]
+        ]
+
+
 textDiv : List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
 textDiv =
     HtmlStyled.div
@@ -568,6 +580,20 @@ itemDiv =
             , padding (rem 1)
             , position relative
             , borderRadius (rem 1)
+            ]
+        ]
+
+
+dashboardItem : List (HtmlStyled.Html msg) -> HtmlStyled.Html msg
+dashboardItem =
+    HtmlStyled.div
+        [ Attributes.css
+            [ displayFlex
+            , flexDirection row
+            , property "gap" "20px"
+            , width (pct 100)
+            , color theme.white
+            , padding (rem 1)
             ]
         ]
 
